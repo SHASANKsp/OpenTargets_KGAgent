@@ -1,0 +1,948 @@
+<title>Open Targets Knowledge Graph</title>
+<meta name="description" content="A knowledge-graph schema and application map built from the 55 Open Targets 26.03 datasets.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,400;0,500;0,600;0,700;1,400&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+:root{
+  --ground:#F4F6F8; --surface:#FFFFFF; --surface-2:#EEF1F4; --line:#DDE3E9;
+  --ink:#111A22; --ink-2:#3C4A57; --muted:#6A7885; --faint:#93A0AC;
+  --accent:#0E8C82; --accent-ink:#0A6F67;
+  /* entity families: solid + tint */
+  --f-target:#0E8C82;  --f-target-bg:#DDF0EE;
+  --f-disease:#CE3F58; --f-disease-bg:#F8E0E5;
+  --f-drug:#B9770F;    --f-drug-bg:#F6EAD4;
+  --f-variant:#6E54CE; --f-variant-bg:#E7E1F6;
+  --f-study:#2C6BC7;   --f-study-bg:#DCE7F6;
+  --f-tissue:#3F8F44;  --f-tissue-bg:#DFEEDF;
+  --f-onto:#5A6A8C;    --f-onto-bg:#E3E7EF;
+  --f-lit:#8A6A46;     --f-lit-bg:#EEE6DC;
+  --edge:#9AA7B3; --halo:#FFFFFF;
+  --shadow:0 1px 2px rgba(16,30,45,.05),0 8px 26px rgba(16,30,45,.07);
+  --radius:14px;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --ground:#0D1319; --surface:#141C24; --surface-2:#1B242D; --line:#28323C;
+  --ink:#EAF0F4; --ink-2:#B9C6D0; --muted:#8998A4; --faint:#63727E;
+  --accent:#38C3B7; --accent-ink:#5BD6CB;
+  --f-target:#39C2B6;  --f-target-bg:#123230;
+  --f-disease:#F0788A; --f-disease-bg:#3A1D23;
+  --f-drug:#E0A64A;    --f-drug-bg:#392C15;
+  --f-variant:#A793EE; --f-variant-bg:#241E3B;
+  --f-study:#6AA3EE;   --f-study-bg:#152941;
+  --f-tissue:#6FC074;  --f-tissue-bg:#16301A;
+  --f-onto:#9AA8C6;    --f-onto-bg:#212836;
+  --f-lit:#C6A079;     --f-lit-bg:#2E2517;
+  --edge:#5B6976; --halo:#141C24;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 10px 30px rgba(0,0,0,.35);
+}}
+:root[data-theme="dark"]{
+  --ground:#0D1319; --surface:#141C24; --surface-2:#1B242D; --line:#28323C;
+  --ink:#EAF0F4; --ink-2:#B9C6D0; --muted:#8998A4; --faint:#63727E;
+  --accent:#38C3B7; --accent-ink:#5BD6CB;
+  --f-target:#39C2B6;  --f-target-bg:#123230;
+  --f-disease:#F0788A; --f-disease-bg:#3A1D23;
+  --f-drug:#E0A64A;    --f-drug-bg:#392C15;
+  --f-variant:#A793EE; --f-variant-bg:#241E3B;
+  --f-study:#6AA3EE;   --f-study-bg:#152941;
+  --f-tissue:#6FC074;  --f-tissue-bg:#16301A;
+  --f-onto:#9AA8C6;    --f-onto-bg:#212836;
+  --f-lit:#C6A079;     --f-lit-bg:#2E2517;
+  --edge:#5B6976; --halo:#141C24;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 10px 30px rgba(0,0,0,.35);
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{background:var(--ground);color:var(--ink);
+  font-family:"IBM Plex Sans",system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+  line-height:1.6;-webkit-font-smoothing:antialiased;}
+.wrap{max-width:1180px;margin:0 auto;padding:0 24px;}
+h1,h2,h3{font-family:"Spectral",Georgia,serif;text-wrap:balance;line-height:1.15;margin:0;}
+code,.mono{font-family:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;}
+a{color:var(--accent-ink);text-decoration:none;}
+a:hover{text-decoration:underline;}
+
+/* ---------- header / hero ---------- */
+header.hero{padding:64px 0 40px;border-bottom:1px solid var(--line);position:relative;overflow:hidden;}
+.eyebrow{font-family:"IBM Plex Mono",monospace;font-size:12.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--accent-ink);font-weight:600;}
+.hero h1{font-size:clamp(2.5rem,6vw,4.2rem);font-weight:600;letter-spacing:-.02em;margin:14px 0 0;}
+.hero .lede{font-size:clamp(1.05rem,1.7vw,1.32rem);color:var(--ink-2);max-width:60ch;margin:20px 0 0;}
+.hero .meta{margin-top:22px;font-size:14px;color:var(--muted);font-family:"IBM Plex Mono",monospace;}
+.hero .meta b{color:var(--ink-2);font-weight:600;}
+.statband{display:grid;grid-template-columns:repeat(6,1fr);gap:1px;background:var(--line);
+  border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;margin-top:34px;box-shadow:var(--shadow);}
+.statband .cell{background:var(--surface);padding:16px 16px 15px;}
+.statband .num{font-family:"Spectral",serif;font-size:clamp(1.4rem,2.4vw,1.9rem);font-weight:600;letter-spacing:-.01em;color:var(--ink);}
+.statband .lab{font-size:11.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-top:2px;}
+@media(max-width:840px){.statband{grid-template-columns:repeat(3,1fr);}}
+@media(max-width:460px){.statband{grid-template-columns:repeat(2,1fr);}}
+
+/* ---------- layout with rail ---------- */
+.shell{display:grid;grid-template-columns:210px 1fr;gap:48px;align-items:start;padding:44px 0 90px;}
+nav.toc{position:sticky;top:24px;font-size:13.5px;}
+nav.toc .tt{font-family:"IBM Plex Mono",monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--faint);margin-bottom:12px;}
+nav.toc ol{list-style:none;margin:0;padding:0;counter-reset:sec;}
+nav.toc li{counter-increment:sec;margin:2px 0;}
+nav.toc a{display:flex;gap:9px;color:var(--ink-2);padding:5px 8px;border-radius:8px;border-left:2px solid transparent;}
+nav.toc a::before{content:counter(sec,decimal-leading-zero);color:var(--faint);font-family:"IBM Plex Mono",monospace;font-size:11px;padding-top:2px;}
+nav.toc a:hover{background:var(--surface-2);text-decoration:none;color:var(--ink);}
+main{min-width:0;}
+@media(max-width:900px){.shell{grid-template-columns:1fr;gap:0;}nav.toc{display:none;}}
+
+section{margin-bottom:56px;scroll-margin-top:20px;}
+section > h2{font-size:clamp(1.6rem,3vw,2.15rem);font-weight:600;letter-spacing:-.015em;}
+.kicker{font-family:"IBM Plex Mono",monospace;font-size:11.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--accent-ink);font-weight:600;margin-bottom:6px;}
+section > p{color:var(--ink-2);max-width:72ch;margin:14px 0;}
+section > p.wide{max-width:none;}
+.h3{font-size:1.18rem;font-weight:600;margin:30px 0 6px;letter-spacing:-.01em;}
+
+/* ---------- node family cards ---------- */
+.grid{display:grid;gap:16px;}
+.cols3{grid-template-columns:repeat(3,1fr);}
+.cols2{grid-template-columns:repeat(2,1fr);}
+@media(max-width:820px){.cols3,.cols2{grid-template-columns:1fr;}}
+.ncard{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);
+  padding:18px 18px 16px;box-shadow:var(--shadow);border-left:4px solid var(--fam);position:relative;}
+.ncard .nhead{display:flex;align-items:baseline;justify-content:space-between;gap:10px;}
+.ncard h3{font-size:1.12rem;font-weight:600;}
+.ncard .tag{font-family:"IBM Plex Mono",monospace;font-size:10.5px;letter-spacing:.04em;text-transform:uppercase;
+  color:var(--fam);background:var(--fam-bg);padding:3px 8px;border-radius:20px;font-weight:600;white-space:nowrap;}
+.ncard .idfmt{font-family:"IBM Plex Mono",monospace;font-size:12px;color:var(--ink-2);margin:9px 0 4px;
+  background:var(--surface-2);border:1px solid var(--line);border-radius:7px;padding:5px 8px;display:inline-block;}
+.ncard p{font-size:13.5px;color:var(--ink-2);margin:8px 0 0;}
+.ncard .src{font-size:12px;color:var(--muted);margin-top:11px;padding-top:10px;border-top:1px dashed var(--line);}
+.ncard .src b{color:var(--ink-2);font-weight:600;}
+.ncard .rows{font-family:"IBM Plex Mono",monospace;font-size:12px;color:var(--fam);font-weight:600;}
+.props{display:flex;flex-wrap:wrap;gap:5px;margin-top:10px;}
+.props span{font-family:"IBM Plex Mono",monospace;font-size:11px;color:var(--ink-2);background:var(--surface-2);
+  border:1px solid var(--line);border-radius:6px;padding:2px 7px;}
+
+/* family utility */
+.ft{--fam:var(--f-target);--fam-bg:var(--f-target-bg);}
+.fd{--fam:var(--f-disease);--fam-bg:var(--f-disease-bg);}
+.fr{--fam:var(--f-drug);--fam-bg:var(--f-drug-bg);}
+.fv{--fam:var(--f-variant);--fam-bg:var(--f-variant-bg);}
+.fs{--fam:var(--f-study);--fam-bg:var(--f-study-bg);}
+.fi{--fam:var(--f-tissue);--fam-bg:var(--f-tissue-bg);}
+.fo{--fam:var(--f-onto);--fam-bg:var(--f-onto-bg);}
+.fl{--fam:var(--f-lit);--fam-bg:var(--f-lit-bg);}
+
+/* ---------- figure / diagram ---------- */
+figure{margin:26px 0;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);
+  padding:22px 18px 14px;box-shadow:var(--shadow);overflow-x:auto;}
+figure svg{display:block;width:100%;height:auto;min-width:680px;}
+figcaption{font-size:13px;color:var(--muted);margin-top:12px;text-align:center;max-width:76ch;margin-left:auto;margin-right:auto;}
+figcaption b{color:var(--ink-2);}
+/* svg node styling via classes (theme-aware) */
+.node rect{stroke-width:1.6;}
+.node text{font-family:"IBM Plex Sans",sans-serif;font-weight:600;fill:var(--ink);}
+.node .sub{font-family:"IBM Plex Mono",monospace;font-weight:500;fill:var(--muted);}
+.nt rect{fill:var(--f-target-bg);stroke:var(--f-target);}
+.nd rect{fill:var(--f-disease-bg);stroke:var(--f-disease);}
+.nr rect{fill:var(--f-drug-bg);stroke:var(--f-drug);}
+.nv rect{fill:var(--f-variant-bg);stroke:var(--f-variant);}
+.ns rect{fill:var(--f-study-bg);stroke:var(--f-study);}
+.ni rect{fill:var(--f-tissue-bg);stroke:var(--f-tissue);}
+.no rect{fill:var(--f-onto-bg);stroke:var(--f-onto);}
+.nl rect{fill:var(--f-lit-bg);stroke:var(--f-lit);}
+.hub rect{stroke-width:2.6;}
+.edge{stroke:var(--edge);stroke-width:1.6;fill:none;}
+.edge.core{stroke:var(--accent);stroke-width:3.4;}
+.edge.ml{stroke:var(--f-variant);stroke-width:2;stroke-dasharray:1 5;stroke-linecap:round;}
+.edge.lit{stroke:var(--f-lit);stroke-width:1.5;stroke-dasharray:5 4;}
+.elabel{font-family:"IBM Plex Mono",monospace;font-size:11px;fill:var(--ink-2);
+  paint-order:stroke;stroke:var(--halo);stroke-width:3.4px;stroke-linejoin:round;font-weight:500;}
+.elabel.on-core{fill:var(--accent-ink);font-weight:600;}
+
+/* legend */
+.legend{display:flex;flex-wrap:wrap;gap:14px 20px;margin:6px 0 4px;justify-content:center;}
+.legend span{display:flex;align-items:center;gap:7px;font-size:12.5px;color:var(--ink-2);}
+.legend i{width:13px;height:13px;border-radius:4px;border:1.6px solid var(--c);background:var(--b);display:inline-block;}
+
+/* ---------- edge catalog table ---------- */
+.tblwrap{overflow-x:auto;border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);margin-top:20px;}
+table{border-collapse:collapse;width:100%;min-width:640px;font-size:13.5px;background:var(--surface);}
+th,td{text-align:left;padding:11px 14px;border-bottom:1px solid var(--line);vertical-align:top;}
+thead th{background:var(--surface-2);font-size:11px;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);font-weight:600;position:sticky;top:0;}
+tbody tr:last-child td{border-bottom:none;}
+td .mono,th .mono{font-size:12.5px;}
+td .rel{font-family:"IBM Plex Mono",monospace;font-size:12px;color:var(--accent-ink);font-weight:600;white-space:nowrap;}
+.pill{display:inline-block;font-family:"IBM Plex Mono",monospace;font-size:10.5px;padding:2px 7px;border-radius:20px;
+  border:1px solid var(--fam);color:var(--fam);background:var(--fam-bg);font-weight:600;}
+td.num{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums;color:var(--ink-2);white-space:nowrap;}
+
+/* ---------- applications ---------- */
+.appgroup{margin-top:26px;}
+.appgroup > .ag-h{display:flex;align-items:center;gap:12px;margin-bottom:14px;}
+.appgroup .ag-n{font-family:"IBM Plex Mono",monospace;font-size:12px;color:var(--faint);font-weight:600;}
+.appgroup .ag-h h3{font-size:1.24rem;font-weight:600;letter-spacing:-.01em;}
+.appgroup .ag-h .ln{flex:1;height:1px;background:var(--line);}
+.acards{display:grid;grid-template-columns:repeat(2,1fr);gap:15px;}
+@media(max-width:820px){.acards{grid-template-columns:1fr;}}
+.acard{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:17px 17px 15px;box-shadow:var(--shadow);}
+.acard h4{font-family:"Spectral",serif;font-size:1.08rem;font-weight:600;margin:0 0 6px;letter-spacing:-.01em;}
+.acard p{font-size:13.5px;color:var(--ink-2);margin:0 0 11px;}
+.acard .trav{font-family:"IBM Plex Mono",monospace;font-size:11.5px;line-height:1.7;color:var(--ink-2);
+  background:var(--surface-2);border:1px solid var(--line);border-radius:8px;padding:9px 10px;overflow-x:auto;white-space:nowrap;}
+.acard .uses{font-size:11.5px;color:var(--muted);margin-top:10px;}
+.acard .uses b{color:var(--ink-2);font-weight:600;}
+
+/* callout */
+.callout{background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--accent);
+  border-radius:12px;padding:18px 20px;box-shadow:var(--shadow);margin:20px 0;}
+.callout h3{font-size:1.05rem;font-weight:600;margin-bottom:6px;}
+.callout p{font-size:13.5px;color:var(--ink-2);margin:6px 0 0;max-width:none;}
+.callout code{background:var(--surface-2);border:1px solid var(--line);border-radius:5px;padding:1px 5px;font-size:12px;}
+
+footer{border-top:1px solid var(--line);padding:30px 0 60px;color:var(--muted);font-size:13px;}
+footer b{color:var(--ink-2);}
+.disc{font-size:12px;color:var(--faint);margin-top:10px;max-width:80ch;}
+</style>
+
+<header class="hero">
+  <div class="wrap">
+    <div class="eyebrow">Open Targets Platform · Release 26.03</div>
+    <h1>A Knowledge Graph of Targets, Diseases &amp; Drugs</h1>
+    <p class="lede">The 55 parquet datasets in this release are, in effect, a pre-assembled biomedical
+      knowledge graph waiting to be materialised. This report reads their real schemas, proposes the
+      node and relationship model to build, and maps the applications the graph unlocks on its own.</p>
+    <p class="meta">Grounded in the actual field-level schema of <b>55 datasets</b> · <b>~470M</b> total rows scanned on disk · genes · variants · drugs · genetic studies · literature</p>
+
+    <div class="statband">
+      <div class="cell"><div class="num">16</div><div class="lab">Node types</div></div>
+      <div class="cell"><div class="num">25+</div><div class="lab">Edge types</div></div>
+      <div class="cell"><div class="num">78.7K</div><div class="lab">Targets (genes)</div></div>
+      <div class="cell"><div class="num">47.0K</div><div class="lab">Diseases / EFO</div></div>
+      <div class="cell"><div class="num">7.43M</div><div class="lab">Variants</div></div>
+      <div class="cell"><div class="num">22.2K</div><div class="lab">Drugs (ChEMBL)</div></div>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+<div class="shell">
+  <nav class="toc" aria-label="Contents">
+    <div class="tt">Contents</div>
+    <ol>
+      <li><a href="#model">The modelling principle</a></li>
+      <li><a href="#nodes">Node catalog</a></li>
+      <li><a href="#schema">The graph schema</a></li>
+      <li><a href="#edges">Relationship catalog</a></li>
+      <li><a href="#genetics">Genetic evidence chain</a></li>
+      <li><a href="#apps">Applications</a></li>
+      <li><a href="#appendix">Dataset → graph map</a></li>
+    </ol>
+  </nav>
+
+  <main>
+  <!-- 1. MODEL -->
+  <section id="model">
+    <div class="kicker">Orientation</div>
+    <h2>Everything here is evidence linking a target to a disease</h2>
+    <p class="wide">Open Targets is organised around one central assertion — <b>a target (gene/protein) is
+      associated with a disease</b> — and everything else in the release exists to support, score, quantify,
+      or contextualise that assertion. That makes the data a natural fit for a property graph. Twenty
+      <code>evidence_*</code> datasets each contribute a differently-flavoured <em>Target → Disease</em>
+      edge (genetic, somatic, animal-model, expression, pathway, literature, clinical). The
+      <code>association_*</code> datasets are the pre-computed roll-ups of those edges into a single
+      harmonised score. Around this spine sit the supporting entities — drugs, variants, genetic studies,
+      credible sets, tissues, pathways, phenotypes and publications — each connected by its own typed relationship.</p>
+    <div class="callout">
+      <h3>The design in one sentence</h3>
+      <p>Two <b>hub</b> node types (Target, Disease) carry a scored association backbone; a
+        <b>drug</b> axis attaches therapeutics, trials and safety; a <b>genetics</b> axis
+        (Variant → Credible Set → Study, plus L2G and colocalisation) explains <em>why</em> a locus implicates a
+        gene; and a set of <b>ontology / functional</b> nodes (GO, Reactome, HPO, mouse phenotypes, tissues)
+        give every entity biological grounding and hierarchy.</p>
+    </div>
+  </section>
+
+  <!-- 2. NODES -->
+  <section id="nodes">
+    <div class="kicker">Entities</div>
+    <h2>Node catalog — 16 entity types</h2>
+    <p class="wide">Each card names the entity, its stable identifier scheme, the row count of its source
+      dataset(s) in this release, and the properties worth promoting onto the node. Colour encodes the
+      entity <em>family</em> and is reused in the schema diagram and tables below.</p>
+
+    <div class="h3">Core hubs</div>
+    <div class="grid cols2">
+      <div class="ncard ft">
+        <div class="nhead"><h3>Target</h3><span class="tag">Gene / Protein</span></div>
+        <div class="idfmt">ENSG00000157764</div>
+        <p>The human gene/protein. Rich node: genomic location, biotype, tractability by modality,
+          genetic constraint, subcellular location, target class, safety liabilities, cancer hallmarks,
+          chemical probes and homologues all travel as properties or sub-nodes.</p>
+        <div class="props"><span>approvedSymbol</span><span>biotype</span><span>tractability</span><span>constraint</span><span>safetyLiabilities</span><span>targetClass</span><span>subcellularLocations</span></div>
+        <div class="src"><b>Source:</b> target, target_prioritisation, target_essentiality · <span class="rows">78,691 rows</span></div>
+      </div>
+      <div class="ncard fd">
+        <div class="nhead"><h3>Disease / Phenotype</h3><span class="tag">EFO · MONDO · HPO</span></div>
+        <div class="idfmt">EFO_0000685 · MONDO_… · HP_…</div>
+        <p>Ontology term for a disease, trait or phenotype, with a full <code>parents / ancestors /
+          descendants</code> hierarchy and therapeutic-area membership. HPO terms extend it with clinical
+          phenotype vocabulary.</p>
+        <div class="props"><span>name</span><span>therapeuticAreas</span><span>ancestors</span><span>dbXRefs</span><span>synonyms</span></div>
+        <div class="src"><b>Source:</b> disease (47,030), disease_hpo (31,529) · <span class="rows">78,559 terms</span></div>
+      </div>
+    </div>
+
+    <div class="h3">Therapeutic axis</div>
+    <div class="grid cols3">
+      <div class="ncard fr">
+        <div class="nhead"><h3>Drug</h3><span class="tag">Molecule</span></div>
+        <div class="idfmt">CHEMBL1201583</div>
+        <p>Chemical/biological drug with structure, modality, max clinical phase, trade names and
+          a parent–child (salt/form) hierarchy.</p>
+        <div class="props"><span>drugType</span><span>canonicalSmiles</span><span>maxClinicalStage</span><span>parentId</span></div>
+        <div class="src"><b>Source:</b> drug_molecule · <span class="rows">22,230 rows</span></div>
+      </div>
+      <div class="ncard fr">
+        <div class="nhead"><h3>Clinical Report</h3><span class="tag">Trial</span></div>
+        <div class="idfmt">trial / report id</div>
+        <p>A trial or curated clinical record — phase, status, sponsor, countries, stop reason,
+          arms and linked drugs/diseases/side-effects.</p>
+        <div class="props"><span>trialPhase</span><span>trialOverallStatus</span><span>trialWhyStopped</span><span>sideEffects</span></div>
+        <div class="src"><b>Source:</b> clinical_report · <span class="rows">285,213 rows</span></div>
+      </div>
+      <div class="ncard fr">
+        <div class="nhead"><h3>Adverse Event</h3><span class="tag">MedDRA</span></div>
+        <div class="idfmt">meddraCode</div>
+        <p>A post-marketing reaction term with a disproportionality signal (log-likelihood ratio vs.
+          critical value) from openFDA FAERS.</p>
+        <div class="props"><span>event</span><span>llr</span><span>critval</span><span>count</span></div>
+        <div class="src"><b>Source:</b> openfda_significant_adverse_drug_reactions · <span class="rows">115,698 rows</span></div>
+      </div>
+    </div>
+
+    <div class="h3">Genetics axis</div>
+    <div class="grid cols3">
+      <div class="ncard fv">
+        <div class="nhead"><h3>Variant</h3><span class="tag">Sequence variant</span></div>
+        <div class="idfmt">1_154453788_C_T</div>
+        <p>A sequence variant with alleles, rsIDs, population frequencies, per-transcript consequences
+          (SIFT/PolyPhen/LOFTEE) and most-severe SO consequence.</p>
+        <div class="props"><span>rsIds</span><span>transcriptConsequences</span><span>alleleFrequencies</span><span>variantEffect</span></div>
+        <div class="src"><b>Source:</b> variant · <span class="rows">7,432,549 rows</span></div>
+      </div>
+      <div class="ncard fs">
+        <div class="nhead"><h3>Genetic Study</h3><span class="tag">GWAS / QTL</span></div>
+        <div class="idfmt">studyId</div>
+        <p>A GWAS or molecular-QTL study — trait, sample size, ancestry composition, publication and
+          (for QTLs) the measured gene.</p>
+        <div class="props"><span>studyType</span><span>traitFromSource</span><span>nCases / nControls</span><span>geneId (QTL)</span></div>
+        <div class="src"><b>Source:</b> study · <span class="rows">2,001,827 rows</span></div>
+      </div>
+      <div class="ncard fs">
+        <div class="nhead"><h3>Credible Set</h3><span class="tag">Study Locus</span></div>
+        <div class="idfmt">studyLocusId</div>
+        <p>A fine-mapped association signal: the 95%/99% credible set of variants at a locus, with
+          posterior probabilities, LD set and finemapping method.</p>
+        <div class="props"><span>locus[]</span><span>credibleSetlog10BF</span><span>finemappingMethod</span><span>confidence</span></div>
+        <div class="src"><b>Source:</b> credible_set · <span class="rows">3,491,182 rows</span></div>
+      </div>
+    </div>
+
+    <div class="h3">Regulatory &amp; functional axis</div>
+    <div class="grid cols3">
+      <div class="ncard fi">
+        <div class="nhead"><h3>Biosample</h3><span class="tag">Tissue · Cell · Anatomy</span></div>
+        <div class="idfmt">UBERON_… · CL_… · EFO_…</div>
+        <p>A tissue, cell type or cell line with its own ontology hierarchy — the context for
+          expression, essentiality and enhancer activity.</p>
+        <div class="props"><span>biosampleName</span><span>ancestors</span><span>xrefs</span></div>
+        <div class="src"><b>Source:</b> biosample · <span class="rows">35,744 rows</span></div>
+      </div>
+      <div class="ncard fi">
+        <div class="nhead"><h3>Regulatory Element</h3><span class="tag">Enhancer</span></div>
+        <div class="idfmt">intervalId (chr:start-end)</div>
+        <p>A genomic enhancer / regulatory interval linked to a gene it regulates, in a given
+          biosample, with distance-to-TSS and a resource score.</p>
+        <div class="props"><span>chromosome / start / end</span><span>distanceToTss</span><span>datasourceId</span></div>
+        <div class="src"><b>Source:</b> enhancer_to_gene · <span class="rows">48,810,390 rows</span></div>
+      </div>
+      <div class="ncard fo">
+        <div class="nhead"><h3>Pathway / Reaction</h3><span class="tag">Reactome</span></div>
+        <div class="idfmt">R-HSA-…</div>
+        <p>A biological pathway or reaction the target participates in, with top-level term. Backbone
+          for pathway-level aggregation and network medicine.</p>
+        <div class="props"><span>pathway</span><span>topLevelTerm</span><span>reactionId</span></div>
+        <div class="src"><b>Source:</b> target.pathways, evidence_reactome · <span class="rows">10,748 evidence</span></div>
+      </div>
+      <div class="ncard fo">
+        <div class="nhead"><h3>GO Term</h3><span class="tag">Gene Ontology</span></div>
+        <div class="idfmt">GO_0005515</div>
+        <p>Molecular-function, biological-process or cellular-component annotation, with the full
+          <code>isA / partOf / regulates</code> DAG.</p>
+        <div class="props"><span>namespace</span><span>isA</span><span>regulates</span></div>
+        <div class="src"><b>Source:</b> go, target.go · <span class="rows">48,251 rows</span></div>
+      </div>
+      <div class="ncard fo">
+        <div class="nhead"><h3>Mouse Phenotype</h3><span class="tag">MP</span></div>
+        <div class="idfmt">MP_…</div>
+        <p>A mammalian phenotype observed on a gene knockout model, with allelic composition and
+          genetic background — cross-species evidence.</p>
+        <div class="props"><span>modelPhenotypeLabel</span><span>biologicalModels</span><span>classes</span></div>
+        <div class="src"><b>Source:</b> mouse_phenotype (210,538), evidence_impc (1.52M)</div>
+      </div>
+      <div class="ncard fo">
+        <div class="nhead"><h3>Sequence Ontology</h3><span class="tag">SO consequence</span></div>
+        <div class="idfmt">SO_0001583</div>
+        <p>Controlled vocabulary for variant functional consequence (e.g. missense, stop-gained) —
+          the type shared by variant and evidence records.</p>
+        <div class="props"><span>label</span></div>
+        <div class="src"><b>Source:</b> so · <span class="rows">2,615 rows</span></div>
+      </div>
+    </div>
+
+    <div class="h3">Evidence &amp; literature axis</div>
+    <div class="grid cols3">
+      <div class="ncard fl">
+        <div class="nhead"><h3>Publication</h3><span class="tag">Literature</span></div>
+        <div class="idfmt">pmid · pmcid</div>
+        <p>A paper, connected to the targets, diseases and drugs it co-mentions. The literature index
+          is the largest table in the release — a text-mining co-occurrence layer.</p>
+        <div class="props"><span>keywordId</span><span>keywordType</span><span>relevance</span><span>year</span></div>
+        <div class="src"><b>Source:</b> literature (164M co-mentions), evidence_europepmc (24.4M)</div>
+      </div>
+      <div class="ncard fo">
+        <div class="nhead"><h3>PGx Genotype</h3><span class="tag">Haplotype</span></div>
+        <div class="idfmt">genotypeId · haplotypeId</div>
+        <p>A pharmacogenomic haplotype/genotype linking a variant and gene to a drug response
+          phenotype with directionality and evidence level.</p>
+        <div class="props"><span>pgxCategory</span><span>evidenceLevel</span><span>phenotypeText</span></div>
+        <div class="src"><b>Source:</b> pharmacogenomics · <span class="rows">33,080 rows</span></div>
+      </div>
+      <div class="ncard fr">
+        <div class="nhead"><h3>Drug Warning</h3><span class="tag">Toxicity class</span></div>
+        <div class="idfmt">efoIdForWarningClass</div>
+        <p>A withdrawal / black-box warning attached to drugs, with toxicity class, country, year and
+          mapped EFO term — a node or a typed edge to Disease.</p>
+        <div class="props"><span>warningType</span><span>toxicityClass</span><span>country</span></div>
+        <div class="src"><b>Source:</b> drug_warning · <span class="rows">2,302 rows</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3. SCHEMA DIAGRAM -->
+  <section id="schema">
+    <div class="kicker">Meta-schema</div>
+    <h2>How the entity types connect</h2>
+    <p class="wide">The meta-graph below is the schema you would declare in Neo4j, RDF, or a
+      property-graph loader. Target and Disease sit at the centre as twin hubs joined by the scored
+      association backbone; every other node type attaches through a small number of typed, directed
+      relationships. Colour marks the entity family; the thick teal edge is the pre-scored spine.</p>
+
+    <div class="legend" aria-hidden="true">
+      <span><i style="--c:var(--f-target);--b:var(--f-target-bg)"></i>Target</span>
+      <span><i style="--c:var(--f-disease);--b:var(--f-disease-bg)"></i>Disease / Phenotype</span>
+      <span><i style="--c:var(--f-drug);--b:var(--f-drug-bg)"></i>Drug / Clinical</span>
+      <span><i style="--c:var(--f-variant);--b:var(--f-variant-bg)"></i>Variant</span>
+      <span><i style="--c:var(--f-study);--b:var(--f-study-bg)"></i>Genetic study</span>
+      <span><i style="--c:var(--f-tissue);--b:var(--f-tissue-bg)"></i>Tissue / Regulatory</span>
+      <span><i style="--c:var(--f-onto);--b:var(--f-onto-bg)"></i>Ontology / Functional</span>
+      <span><i style="--c:var(--f-lit);--b:var(--f-lit-bg)"></i>Literature</span>
+    </div>
+
+    <figure>
+      <svg viewBox="0 0 1120 720" role="img" aria-label="Meta-schema of the Open Targets knowledge graph: Target and Disease hubs joined by a scored association edge, with drug, variant, genetic study, tissue, ontology and literature node types attached by typed relationships.">
+        <defs>
+          <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z" fill="var(--edge)"></path>
+          </marker>
+          <marker id="ahc" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z" fill="var(--accent)"></path>
+          </marker>
+          <marker id="ahv" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z" fill="var(--f-variant)"></path>
+          </marker>
+        </defs>
+
+        <!-- ===== EDGES (drawn first, under nodes) ===== -->
+        <!-- core association backbone -->
+        <line class="edge core" x1="470" y1="360" x2="650" y2="360" marker-end="url(#ahc)" marker-start="url(#ahc)"></line>
+        <text class="elabel on-core" x="560" y="345" text-anchor="middle">associated_with</text>
+        <text class="elabel on-core" x="560" y="380" text-anchor="middle" style="font-size:10px">score · evidence[]</text>
+
+        <!-- Target · left column functional -->
+        <line class="edge" x1="210" y1="250" x2="345" y2="335" marker-start="url(#ah)"></line>
+        <text class="elabel" x="255" y="286" text-anchor="middle">annotated_with</text>
+        <line class="edge" x1="210" y1="360" x2="342" y2="360" marker-start="url(#ah)"></line>
+        <text class="elabel" x="272" y="352" text-anchor="middle">participates_in</text>
+        <line class="edge" x1="210" y1="470" x2="345" y2="388" marker-start="url(#ah)"></line>
+        <text class="elabel" x="256" y="446" text-anchor="middle">expressed_in</text>
+        <line class="edge" x1="210" y1="588" x2="360" y2="398" marker-end="url(#ah)"></line>
+        <text class="elabel" x="238" y="520" text-anchor="middle">regulates</text>
+
+        <!-- Target self PPI -->
+        <path class="edge" d="M372,326 C352,290 432,290 412,326" marker-end="url(#ah)"></path>
+        <text class="elabel" x="392" y="292" text-anchor="middle">interacts_with</text>
+
+        <!-- Drug -> Target, Drug -> Disease -->
+        <line class="edge" x1="430" y1="120" x2="398" y2="332" marker-end="url(#ah)"></line>
+        <text class="elabel" x="392" y="228" text-anchor="middle">targets</text>
+        <line class="edge" x1="470" y1="112" x2="742" y2="336" marker-end="url(#ah)"></line>
+        <text class="elabel" x="655" y="210" text-anchor="middle">indicated_for</text>
+        <!-- Drug -> Clinical, Drug -> ADR -->
+        <line class="edge" x1="470" y1="96" x2="612" y2="96" marker-end="url(#ah)"></line>
+        <text class="elabel" x="541" y="88" text-anchor="middle">studied_in</text>
+        <line class="edge" x1="392" y1="90" x2="238" y2="118" marker-end="url(#ah)"></line>
+        <text class="elabel" x="318" y="94" text-anchor="middle">has_adr</text>
+
+        <!-- Publication mentions -->
+        <line class="edge lit" x1="150" y1="150" x2="345" y2="345"></line>
+        <text class="elabel" x="205" y="240" text-anchor="middle" style="fill:var(--f-lit)">mentions</text>
+
+        <!-- Disease · right column -->
+        <line class="edge" x1="810" y1="336" x2="948" y2="270" marker-end="url(#ah)"></line>
+        <text class="elabel" x="892" y="292" text-anchor="middle">has_phenotype</text>
+        <line class="edge" x1="812" y1="376" x2="948" y2="430" marker-end="url(#ah)"></line>
+        <text class="elabel" x="890" y="424" text-anchor="middle">in_area</text>
+        <!-- Disease self hierarchy -->
+        <path class="edge" d="M740,326 C720,290 800,290 780,326" marker-end="url(#ah)"></path>
+        <text class="elabel" x="760" y="292" text-anchor="middle">subclass_of</text>
+
+        <!-- genetics lane -->
+        <!-- Study -> Disease -->
+        <line class="edge" x1="900" y1="588" x2="800" y2="392" marker-end="url(#ah)"></line>
+        <text class="elabel" x="878" y="500" text-anchor="middle">studies</text>
+        <!-- Variant -> Target consequence -->
+        <line class="edge" x1="560" y1="628" x2="430" y2="392" marker-end="url(#ah)"></line>
+        <text class="elabel" x="470" y="520" text-anchor="middle">consequence_on</text>
+        <!-- Variant -> SO -->
+        <line class="edge" x1="522" y1="668" x2="452" y2="694" marker-end="url(#ah)"></line>
+        <text class="elabel" x="470" y="676" text-anchor="middle">most_severe</text>
+        <!-- Variant -> CredibleSet -->
+        <line class="edge" x1="598" y1="662" x2="642" y2="678" marker-end="url(#ah)"></line>
+        <text class="elabel" x="628" y="656" text-anchor="middle">in_set</text>
+        <!-- CredibleSet -> Study -->
+        <line class="edge" x1="758" y1="690" x2="878" y2="640" marker-end="url(#ah)"></line>
+        <text class="elabel" x="812" y="686" text-anchor="middle">from_study</text>
+        <!-- CredibleSet -> Target : L2G (ML) -->
+        <path class="edge ml" d="M700,678 C640,540 480,440 420,392" marker-end="url(#ahv)"></path>
+        <text class="elabel" x="560" y="560" text-anchor="middle" style="fill:var(--f-variant)">l2g (ML)</text>
+        <!-- CredibleSet self coloc -->
+        <path class="edge" d="M672,708 C650,742 730,742 708,708" marker-end="url(#ah)"></path>
+        <text class="elabel" x="690" y="742" text-anchor="middle">colocalises</text>
+
+        <!-- ===== NODES ===== -->
+        <!-- hubs -->
+        <g class="node nt hub"><rect x="345" y="332" width="125" height="56" rx="10"></rect>
+          <text x="407" y="356" text-anchor="middle" font-size="16">Target</text>
+          <text class="sub" x="407" y="374" text-anchor="middle" font-size="10.5">ENSG…</text></g>
+        <g class="node nd hub"><rect x="650" y="332" width="125" height="56" rx="10"></rect>
+          <text x="712" y="356" text-anchor="middle" font-size="16">Disease</text>
+          <text class="sub" x="712" y="374" text-anchor="middle" font-size="10.5">EFO / HPO</text></g>
+
+        <!-- functional left -->
+        <g class="node no"><rect x="88" y="228" width="122" height="44" rx="8"></rect>
+          <text x="149" y="248" text-anchor="middle" font-size="13">GO term</text>
+          <text class="sub" x="149" y="263" text-anchor="middle" font-size="9.5">GO_…</text></g>
+        <g class="node no"><rect x="88" y="338" width="122" height="44" rx="8"></rect>
+          <text x="149" y="358" text-anchor="middle" font-size="13">Pathway</text>
+          <text class="sub" x="149" y="373" text-anchor="middle" font-size="9.5">Reactome</text></g>
+        <g class="node ni"><rect x="88" y="448" width="122" height="44" rx="8"></rect>
+          <text x="149" y="468" text-anchor="middle" font-size="13">Biosample</text>
+          <text class="sub" x="149" y="483" text-anchor="middle" font-size="9.5">tissue / cell</text></g>
+        <g class="node ni"><rect x="88" y="566" width="122" height="44" rx="8"></rect>
+          <text x="149" y="586" text-anchor="middle" font-size="13">Enhancer</text>
+          <text class="sub" x="149" y="601" text-anchor="middle" font-size="9.5">regulatory</text></g>
+
+        <!-- literature -->
+        <g class="node nl"><rect x="88" y="108" width="122" height="44" rx="8"></rect>
+          <text x="149" y="128" text-anchor="middle" font-size="13">Publication</text>
+          <text class="sub" x="149" y="143" text-anchor="middle" font-size="9.5">pmid</text></g>
+
+        <!-- drug cluster top -->
+        <g class="node nr"><rect x="378" y="74" width="94" height="44" rx="8"></rect>
+          <text x="425" y="94" text-anchor="middle" font-size="13">Drug</text>
+          <text class="sub" x="425" y="109" text-anchor="middle" font-size="9.5">CHEMBL…</text></g>
+        <g class="node nr"><rect x="612" y="74" width="120" height="44" rx="8"></rect>
+          <text x="672" y="94" text-anchor="middle" font-size="12.5">Clinical Report</text>
+          <text class="sub" x="672" y="109" text-anchor="middle" font-size="9.5">trial</text></g>
+        <g class="node nr"><rect x="118" y="98" width="120" height="44" rx="8" style="fill:var(--f-drug-bg);stroke:var(--f-drug)"></rect>
+          <text x="178" y="118" text-anchor="middle" font-size="12">Adverse Event</text>
+          <text class="sub" x="178" y="133" text-anchor="middle" font-size="9.5">MedDRA · LLR</text></g>
+
+        <!-- disease right -->
+        <g class="node nd"><rect x="948" y="248" width="122" height="44" rx="8"></rect>
+          <text x="1009" y="268" text-anchor="middle" font-size="13">HPO term</text>
+          <text class="sub" x="1009" y="283" text-anchor="middle" font-size="9.5">phenotype</text></g>
+        <g class="node nd"><rect x="948" y="408" width="122" height="44" rx="8">
+          </rect><text x="1009" y="426" text-anchor="middle" font-size="11.5">Therapeutic</text>
+          <text x="1009" y="440" text-anchor="middle" font-size="11.5">Area</text></g>
+
+        <!-- genetics lane -->
+        <g class="node nv"><rect x="500" y="626" width="120" height="44" rx="8"></rect>
+          <text x="560" y="646" text-anchor="middle" font-size="13">Variant</text>
+          <text class="sub" x="560" y="661" text-anchor="middle" font-size="9.5">chr_pos_ref_alt</text></g>
+        <g class="node ns"><rect x="640" y="676" width="120" height="44" rx="8"></rect>
+          <text x="700" y="694" text-anchor="middle" font-size="12">Credible Set</text>
+          <text class="sub" x="700" y="709" text-anchor="middle" font-size="9.5">studyLocusId</text></g>
+        <g class="node ns"><rect x="878" y="596" width="120" height="44" rx="8"></rect>
+          <text x="938" y="616" text-anchor="middle" font-size="13">Study</text>
+          <text class="sub" x="938" y="631" text-anchor="middle" font-size="9.5">GWAS / QTL</text></g>
+        <g class="node no"><rect x="360" y="674" width="106" height="44" rx="8"></rect>
+          <text x="413" y="694" text-anchor="middle" font-size="12.5">SO term</text>
+          <text class="sub" x="413" y="709" text-anchor="middle" font-size="9.5">consequence</text></g>
+      </svg>
+      <figcaption><b>The knowledge-graph schema.</b> 16 node types and the principal typed relationships.
+        The teal spine (<b>associated_with</b>) is the pre-scored roll-up of ~20 evidence sources; the dotted
+        violet <b>l2g</b> edge is a machine-learned link from a fine-mapped locus to its most likely causal gene.
+        The full relationship inventory — including every evidence flavour — is tabulated below.</figcaption>
+    </figure>
+  </section>
+
+  <!-- 4. EDGES -->
+  <section id="edges">
+    <div class="kicker">Relationships</div>
+    <h2>Relationship catalog</h2>
+    <p class="wide">Every edge below is directly materialisable from a dataset's foreign keys. The
+      <span class="rel">associated_with</span> spine is realised at four granularities
+      (overall / by-datatype / by-datasource) and two propagation modes (<b>direct</b> vs.
+      <b>indirect</b>, the latter walking the disease ontology), each pre-scored.</p>
+    <div class="tblwrap">
+      <table>
+        <thead><tr><th>Relationship</th><th>From → To</th><th>Source dataset</th><th class="num">Rows</th><th>Carries</th></tr></thead>
+        <tbody>
+          <tr><td><span class="rel">associated_with</span></td><td class="mono">Target → Disease</td><td class="mono">association_overall / _by_datatype / _by_datasource (direct+indirect)</td><td class="num">4.5M–14.9M</td><td>score, evidenceCount, novelty, timeseries</td></tr>
+          <tr><td><span class="rel">evidence</span></td><td class="mono">Target → Disease</td><td class="mono">20× evidence_* datasets</td><td class="num">~34M</td><td>datasource, score, literature, direction</td></tr>
+          <tr><td><span class="rel">targets</span></td><td class="mono">Drug → Target</td><td class="mono">drug_mechanism_of_action</td><td class="num">6,505</td><td>actionType, mechanismOfAction</td></tr>
+          <tr><td><span class="rel">indicated_for</span></td><td class="mono">Drug → Disease</td><td class="mono">clinical_indication</td><td class="num">53,950</td><td>maxClinicalStage</td></tr>
+          <tr><td><span class="rel">studied_in</span></td><td class="mono">Drug → Clinical Report</td><td class="mono">clinical_report / clinical_target</td><td class="num">285K</td><td>phase, status, whyStopped</td></tr>
+          <tr><td><span class="rel">has_adr</span></td><td class="mono">Drug → Adverse Event</td><td class="mono">openfda_significant_adverse_drug_reactions</td><td class="num">115,698</td><td>llr, critval, count</td></tr>
+          <tr><td><span class="rel">has_warning</span></td><td class="mono">Drug → Disease/Class</td><td class="mono">drug_warning</td><td class="num">2,302</td><td>warningType, toxicityClass</td></tr>
+          <tr><td><span class="rel">interacts_with</span></td><td class="mono">Target ↔ Target</td><td class="mono">interaction / interaction_evidence</td><td class="num">14.6M / 27.4M</td><td>scoring, sourceDatabase, method</td></tr>
+          <tr><td><span class="rel">consequence_on</span></td><td class="mono">Variant → Target</td><td class="mono">variant.transcriptConsequences</td><td class="num">7.43M src</td><td>SIFT, PolyPhen, LOFTEE, impact</td></tr>
+          <tr><td><span class="rel">most_severe</span></td><td class="mono">Variant → SO term</td><td class="mono">variant.mostSevereConsequenceId</td><td class="num">7.43M src</td><td>—</td></tr>
+          <tr><td><span class="rel">in_credible_set</span></td><td class="mono">Variant → Credible Set</td><td class="mono">credible_set.locus[]</td><td class="num">3.49M</td><td>posteriorProbability, is95/99</td></tr>
+          <tr><td><span class="rel">from_study</span></td><td class="mono">Credible Set → Study</td><td class="mono">credible_set.studyId</td><td class="num">3.49M</td><td>finemappingMethod, confidence</td></tr>
+          <tr><td><span class="rel">colocalises</span></td><td class="mono">Credible Set ↔ Credible Set</td><td class="mono">colocalisation</td><td class="num">217.9M</td><td>h4, clpp, method</td></tr>
+          <tr><td><span class="rel">l2g</span></td><td class="mono">Credible Set → Target</td><td class="mono">l2g_prediction</td><td class="num">2.79M</td><td>score, SHAP features</td></tr>
+          <tr><td><span class="rel">studies</span></td><td class="mono">Study → Disease</td><td class="mono">study.diseaseIds</td><td class="num">2.0M src</td><td>trait, sampleSize, ancestry</td></tr>
+          <tr><td><span class="rel">measures</span></td><td class="mono">Study → Target</td><td class="mono">study.geneId (QTL)</td><td class="num">2.0M src</td><td>studyType (eQTL, pQTL…)</td></tr>
+          <tr><td><span class="rel">regulates</span></td><td class="mono">Enhancer → Target</td><td class="mono">enhancer_to_gene</td><td class="num">48.8M</td><td>distanceToTss, score, biosample</td></tr>
+          <tr><td><span class="rel">expressed_in</span></td><td class="mono">Target → Biosample</td><td class="mono">expression / evidence_expression_atlas</td><td class="num">50K / 237K</td><td>RNA & protein level, log2FC</td></tr>
+          <tr><td><span class="rel">annotated_with</span></td><td class="mono">Target → GO term</td><td class="mono">target.go / go</td><td class="num">48,251</td><td>aspect, evidence code</td></tr>
+          <tr><td><span class="rel">participates_in</span></td><td class="mono">Target → Pathway</td><td class="mono">target.pathways / evidence_reactome</td><td class="num">10,748</td><td>topLevelTerm, targetModulation</td></tr>
+          <tr><td><span class="rel">model_phenotype</span></td><td class="mono">Target → Mouse Phenotype</td><td class="mono">mouse_phenotype / evidence_impc</td><td class="num">210K / 1.52M</td><td>allelicComposition, background</td></tr>
+          <tr><td><span class="rel">has_phenotype</span></td><td class="mono">Disease → HPO term</td><td class="mono">disease_phenotype</td><td class="num">180,981</td><td>frequency, onset, evidence</td></tr>
+          <tr><td><span class="rel">subclass_of</span></td><td class="mono">Disease → Disease</td><td class="mono">disease.parents / ancestors</td><td class="num">47K src</td><td>ontology hierarchy</td></tr>
+          <tr><td><span class="rel">pgx</span></td><td class="mono">Variant/Target → Drug</td><td class="mono">pharmacogenomics</td><td class="num">33,080</td><td>genotype, evidenceLevel, effect</td></tr>
+          <tr><td><span class="rel">mentions</span></td><td class="mono">Publication → Target/Disease</td><td class="mono">literature / evidence_europepmc</td><td class="num">164M / 24.4M</td><td>relevance, textMiningSentences</td></tr>
+          <tr><td><span class="rel">ortholog / paralog</span></td><td class="mono">Target ↔ Target/species</td><td class="mono">target.homologues</td><td class="num">78K src</td><td>homologyType, %identity</td></tr>
+          <tr><td><span class="rel">essential_in</span></td><td class="mono">Target → Cell line</td><td class="mono">target_essentiality (DepMap)</td><td class="num">17,844</td><td>geneEffect, isEssential</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- 5. GENETIC CHAIN -->
+  <section id="genetics">
+    <div class="kicker">Worked traversal</div>
+    <h2>From a GWAS hit to a therapeutic target</h2>
+    <p class="wide">The single most valuable path in the graph resolves a non-coding association signal
+      to the gene it acts through — the question that the <code>credible_set</code>,
+      <code>l2g_prediction</code> and <code>colocalisation</code> datasets exist to answer. It is why the
+      genetics axis is worth materialising in full.</p>
+
+    <figure>
+      <svg viewBox="0 0 1000 260" role="img" aria-label="Genetic evidence chain: a study reports a signal, fine-mapping produces a credible set of variants, L2G predicts the causal gene, colocalisation with a molecular QTL confirms the mechanism, and the gene links to the disease.">
+        <defs>
+          <marker id="ah2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z" fill="var(--edge)"></path>
+          </marker>
+          <marker id="ah2v" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z" fill="var(--f-variant)"></path>
+          </marker>
+        </defs>
+        <!-- flow -->
+        <line class="edge" x1="150" y1="70" x2="150" y2="122" marker-end="url(#ah2)"></line>
+        <text class="elabel" x="150" y="102" text-anchor="middle">reports</text>
+        <line class="edge" x1="210" y1="150" x2="300" y2="150" marker-end="url(#ah2)"></line>
+        <text class="elabel" x="255" y="142" text-anchor="middle">fine-map</text>
+        <path class="edge ml" d="M420,140 C500,90 560,90 620,116" marker-end="url(#ah2v)"></path>
+        <text class="elabel" x="520" y="96" text-anchor="middle" style="fill:var(--f-variant)">l2g predicts</text>
+        <line class="edge" x1="360" y1="180" x2="360" y2="150" marker-start="url(#ah2)"></line>
+        <path class="edge" d="M330,196 C420,236 560,236 650,182" marker-end="url(#ah2)"></path>
+        <text class="elabel" x="490" y="232" text-anchor="middle">colocalises with QTL</text>
+        <line class="edge core" x1="760" y1="150" x2="852" y2="150" marker-end="url(#ahc)"></line>
+        <text class="elabel on-core" x="806" y="142" text-anchor="middle">assoc.</text>
+
+        <!-- nodes -->
+        <g class="node ns"><rect x="90" y="26" width="120" height="44" rx="8"></rect>
+          <text x="150" y="46" text-anchor="middle" font-size="13">Study</text>
+          <text class="sub" x="150" y="61" text-anchor="middle" font-size="9.5">GWAS</text></g>
+        <g class="node ns"><rect x="90" y="128" width="120" height="44" rx="8"></rect>
+          <text x="150" y="148" text-anchor="middle" font-size="12">Credible Set</text>
+          <text class="sub" x="150" y="163" text-anchor="middle" font-size="9.5">fine-mapped</text></g>
+        <g class="node nv"><rect x="300" y="128" width="120" height="44" rx="8"></rect>
+          <text x="360" y="148" text-anchor="middle" font-size="13">Variant</text>
+          <text class="sub" x="360" y="163" text-anchor="middle" font-size="9.5">high PP</text></g>
+        <g class="node ns"><rect x="300" y="196" width="120" height="44" rx="8" style="fill:var(--f-study-bg);stroke:var(--f-study)"></rect>
+          <text x="360" y="216" text-anchor="middle" font-size="12">QTL signal</text>
+          <text class="sub" x="360" y="231" text-anchor="middle" font-size="9.5">eQTL / pQTL</text></g>
+        <g class="node nt hub"><rect x="640" y="126" width="120" height="48" rx="9"></rect>
+          <text x="700" y="148" text-anchor="middle" font-size="14">Target</text>
+          <text class="sub" x="700" y="164" text-anchor="middle" font-size="9.5">causal gene</text></g>
+        <g class="node nd hub"><rect x="852" y="126" width="118" height="48" rx="9"></rect>
+          <text x="911" y="148" text-anchor="middle" font-size="14">Disease</text>
+          <text class="sub" x="911" y="164" text-anchor="middle" font-size="9.5">trait</text></g>
+      </svg>
+      <figcaption><b>Locus-to-gene resolution.</b> A study's signal is fine-mapped into a credible set;
+        L2G scores the most probable causal gene; independent colocalisation with a molecular QTL corroborates
+        the mechanism; the resolved target then carries a genetically-supported association to the disease —
+        the strongest evidence class for target validation.</figcaption>
+    </figure>
+  </section>
+
+  <!-- 6. APPLICATIONS -->
+  <section id="apps">
+    <div class="kicker">What the graph is for</div>
+    <h2>Applications extractable from the KG alone</h2>
+    <p class="wide">Every application below is a graph query or a graph-ML task over the nodes and edges
+      above — no external data required. Each card shows the entities traversed and the datasets that
+      power it.</p>
+
+    <!-- A -->
+    <div class="appgroup">
+      <div class="ag-h"><span class="ag-n">A</span><h3>Target discovery &amp; validation</h3><span class="ln"></span></div>
+      <div class="acards">
+        <div class="acard">
+          <h4>Genetically-supported target selection</h4>
+          <p>Rank targets for a disease by human genetic evidence, tracing each association back to a
+            fine-mapped locus and a causal-gene prediction.</p>
+          <div class="trav">Disease ←assoc_with─ Target ←l2g─ CredibleSet ←from_study─ Study</div>
+          <div class="uses"><b>Uses:</b> association_overall, l2g_prediction, credible_set, evidence_gwas_credible_sets</div>
+        </div>
+        <div class="acard">
+          <h4>Target safety &amp; tractability triage</h4>
+          <p>Filter candidate targets by developability — modality tractability, genetic constraint,
+            known safety liabilities and essentiality — before committing.</p>
+          <div class="trav">Target · {tractability, constraint, safetyLiabilities, essential_in}</div>
+          <div class="uses"><b>Uses:</b> target, target_prioritisation, target_essentiality</div>
+        </div>
+        <div class="acard">
+          <h4>Cross-species evidence corroboration</h4>
+          <p>Confirm a human target–disease hypothesis with a matching knockout-mouse phenotype via
+            the IMPC bridge.</p>
+          <div class="trav">Target ─model_phenotype→ MousePhenotype ≈ Disease/HPO</div>
+          <div class="uses"><b>Uses:</b> mouse_phenotype, evidence_impc, disease_phenotype</div>
+        </div>
+        <div class="acard">
+          <h4>Novel-association discovery (link prediction)</h4>
+          <p>Train KG embeddings on the association backbone to predict Target–Disease edges that don't
+            yet exist — de-novo hypotheses ranked by plausibility.</p>
+          <div class="trav">embed(all edges) ⇒ score(Target ?→ Disease)</div>
+          <div class="uses"><b>Uses:</b> whole graph; supervised on association_overall</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- B -->
+    <div class="appgroup">
+      <div class="ag-h"><span class="ag-n">B</span><h3>Drug discovery &amp; repurposing</h3><span class="ln"></span></div>
+      <div class="acards">
+        <div class="acard">
+          <h4>Drug repurposing by shared mechanism</h4>
+          <p>Find drugs whose target is associated with a disease they are not yet indicated for — the
+            classic two-hop repurposing query.</p>
+          <div class="trav">Drug ─targets→ Target ─assoc_with→ Disease ⟂ indicated_for</div>
+          <div class="uses"><b>Uses:</b> drug_mechanism_of_action, association_overall, clinical_indication</div>
+        </div>
+        <div class="acard">
+          <h4>Polypharmacology &amp; MoA mapping</h4>
+          <p>Map a drug's full target set onto shared pathways and PPI neighbourhoods to anticipate
+            on- and off-mechanism effects.</p>
+          <div class="trav">Drug ─targets→ Target ─{participates_in, interacts_with}→ …</div>
+          <div class="uses"><b>Uses:</b> drug_mechanism_of_action, target.pathways, interaction</div>
+        </div>
+        <div class="acard">
+          <h4>Clinical &amp; competitive landscape</h4>
+          <p>Assemble the trial landscape for a target or disease — who is in which phase, and why
+            trials stopped.</p>
+          <div class="trav">Target ─…→ Drug ─studied_in→ ClinicalReport →(status, whyStopped)</div>
+          <div class="uses"><b>Uses:</b> clinical_target, clinical_report, clinical_indication</div>
+        </div>
+        <div class="acard">
+          <h4>Biomarker → drug-response linking</h4>
+          <p>Connect a genomic biomarker to the therapy whose response it predicts, for stratified
+            indication design.</p>
+          <div class="trav">Biomarker(Variant/Target) ─→ drugResponse ─→ Drug</div>
+          <div class="uses"><b>Uses:</b> evidence_cancer_biomarkers, evidence_intogen</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- C -->
+    <div class="appgroup">
+      <div class="ag-h"><span class="ag-n">C</span><h3>Safety &amp; pharmacovigilance</h3><span class="ln"></span></div>
+      <div class="acards">
+        <div class="acard">
+          <h4>On-target adverse-event attribution</h4>
+          <p>Test whether a drug's FAERS safety signal is shared across other drugs hitting the same
+            target — separating on-target from off-target liability.</p>
+          <div class="trav">AdverseEvent ←has_adr─ Drug ─targets→ Target ←targets─ Drug'</div>
+          <div class="uses"><b>Uses:</b> openfda…adverse_reactions, drug_mechanism_of_action, drug_warning</div>
+        </div>
+        <div class="acard">
+          <h4>Pharmacogenomic dosing rules</h4>
+          <p>Surface variant–drug response relationships for a gene panel to drive precision-dosing
+            or exclusion logic.</p>
+          <div class="trav">Variant ─pgx→ Drug · {genotype, directionality, evidenceLevel}</div>
+          <div class="uses"><b>Uses:</b> pharmacogenomics</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- D -->
+    <div class="appgroup">
+      <div class="ag-h"><span class="ag-n">D</span><h3>Network &amp; systems medicine</h3><span class="ln"></span></div>
+      <div class="acards">
+        <div class="acard">
+          <h4>Network propagation for indirect targets</h4>
+          <p>Propagate disease association scores across the PPI graph to nominate network-proximal
+            targets that lack direct evidence.</p>
+          <div class="trav">seed(assoc Targets) → diffuse over interacts_with → rank</div>
+          <div class="uses"><b>Uses:</b> interaction, interaction_evidence, association_overall</div>
+        </div>
+        <div class="acard">
+          <h4>Disease similarity &amp; basket design</h4>
+          <p>Cluster diseases by shared associated targets and ontology distance to find repositioning
+            neighbours and basket-trial candidates.</p>
+          <div class="trav">Disease ─assoc_with→ Target ←assoc_with─ Disease' + subclass_of</div>
+          <div class="uses"><b>Uses:</b> association_overall, disease (ontology), disease_phenotype</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- E -->
+    <div class="appgroup">
+      <div class="ag-h"><span class="ag-n">E</span><h3>Functional &amp; regulatory genomics</h3><span class="ln"></span></div>
+      <div class="acards">
+        <div class="acard">
+          <h4>Non-coding variant-to-function</h4>
+          <p>Interpret a regulatory variant by the enhancer it sits in and the gene that enhancer
+            controls, in the relevant tissue.</p>
+          <div class="trav">Variant ∈ Enhancer ─regulates→ Target (in Biosample)</div>
+          <div class="uses"><b>Uses:</b> enhancer_to_gene, variant, biosample</div>
+        </div>
+        <div class="acard">
+          <h4>Tissue-restricted target maps</h4>
+          <p>Require a candidate to be expressed in the disease-relevant tissue and absent from
+            safety-critical ones — expression as a hard filter.</p>
+          <div class="trav">Target ─expressed_in→ Biosample · {RNA, protein level}</div>
+          <div class="uses"><b>Uses:</b> expression, evidence_expression_atlas, biosample</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- F -->
+    <div class="appgroup">
+      <div class="ag-h"><span class="ag-n">F</span><h3>Literature &amp; evidence intelligence</h3><span class="ln"></span></div>
+      <div class="acards">
+        <div class="acard">
+          <h4>Literature-based hypothesis generation</h4>
+          <p>Mine co-mention structure and literature embeddings for Target–Disease pairs that are
+            emerging in text but not yet in curated evidence.</p>
+          <div class="trav">Publication ─mentions→ {Target, Disease} + vector(word)</div>
+          <div class="uses"><b>Uses:</b> literature, literature_vector, evidence_europepmc</div>
+        </div>
+        <div class="acard">
+          <h4>Evidence provenance &amp; novelty tracking</h4>
+          <p>For any association, decompose the score by datasource and watch its novelty time-series
+            to spot rising or decaying evidence.</p>
+          <div class="trav">assoc_with · {aggregationValue, timeseries, currentNovelty}</div>
+          <div class="uses"><b>Uses:</b> association_by_datasource, association_by_datatype</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 7. APPENDIX -->
+  <section id="appendix">
+    <div class="kicker">Reference</div>
+    <h2>Every dataset, mapped to the graph</h2>
+    <p class="wide">All 55 datasets in the release, and the node or edge each one materialises. Row
+      counts are the on-disk totals scanned for this report.</p>
+    <div class="tblwrap">
+      <table>
+        <thead><tr><th>Dataset</th><th class="num">Rows</th><th>Graph role</th><th>Family</th></tr></thead>
+        <tbody>
+          <tr><td class="mono">target</td><td class="num">78,691</td><td>Target node (core properties)</td><td class="ft"><span class="pill">Target</span></td></tr>
+          <tr><td class="mono">target_prioritisation</td><td class="num">78,691</td><td>Target node attributes (developability)</td><td class="ft"><span class="pill">Target</span></td></tr>
+          <tr><td class="mono">target_essentiality</td><td class="num">17,844</td><td>Target → Cell line (essential_in)</td><td class="ft"><span class="pill">Target</span></td></tr>
+          <tr><td class="mono">disease</td><td class="num">47,030</td><td>Disease node + subclass_of hierarchy</td><td class="fd"><span class="pill">Disease</span></td></tr>
+          <tr><td class="mono">disease_hpo</td><td class="num">31,529</td><td>HPO phenotype node</td><td class="fd"><span class="pill">Disease</span></td></tr>
+          <tr><td class="mono">disease_phenotype</td><td class="num">180,981</td><td>Disease → HPO (has_phenotype)</td><td class="fd"><span class="pill">Disease</span></td></tr>
+          <tr><td class="mono">drug_molecule</td><td class="num">22,230</td><td>Drug node + parent_of hierarchy</td><td class="fr"><span class="pill">Drug</span></td></tr>
+          <tr><td class="mono">drug_mechanism_of_action</td><td class="num">6,505</td><td>Drug → Target (targets)</td><td class="fr"><span class="pill">Drug</span></td></tr>
+          <tr><td class="mono">drug_warning</td><td class="num">2,302</td><td>Drug → toxicity class (has_warning)</td><td class="fr"><span class="pill">Drug</span></td></tr>
+          <tr><td class="mono">clinical_indication</td><td class="num">53,950</td><td>Drug → Disease (indicated_for)</td><td class="fr"><span class="pill">Drug</span></td></tr>
+          <tr><td class="mono">clinical_report</td><td class="num">285,213</td><td>Clinical Report node</td><td class="fr"><span class="pill">Drug</span></td></tr>
+          <tr><td class="mono">clinical_target</td><td class="num">13,407</td><td>Drug × Target × Disease clinical link</td><td class="fr"><span class="pill">Drug</span></td></tr>
+          <tr><td class="mono">openfda_significant_adverse_drug_reactions</td><td class="num">115,698</td><td>Drug → Adverse Event (has_adr)</td><td class="fr"><span class="pill">Drug</span></td></tr>
+          <tr><td class="mono">pharmacogenomics</td><td class="num">33,080</td><td>Variant/Target → Drug (pgx)</td><td class="fr"><span class="pill">Drug</span></td></tr>
+          <tr><td class="mono">variant</td><td class="num">7,432,549</td><td>Variant node + consequence_on / most_severe</td><td class="fv"><span class="pill">Variant</span></td></tr>
+          <tr><td class="mono">study</td><td class="num">2,001,827</td><td>Study node + studies / measures</td><td class="fs"><span class="pill">Study</span></td></tr>
+          <tr><td class="mono">credible_set</td><td class="num">3,491,182</td><td>Credible Set node + in_set / from_study</td><td class="fs"><span class="pill">Study</span></td></tr>
+          <tr><td class="mono">colocalisation</td><td class="num">217,914,314</td><td>Credible Set ↔ Credible Set (colocalises)</td><td class="fs"><span class="pill">Study</span></td></tr>
+          <tr><td class="mono">l2g_prediction</td><td class="num">2,794,835</td><td>Credible Set → Target (l2g, ML)</td><td class="fs"><span class="pill">Study</span></td></tr>
+          <tr><td class="mono">enhancer_to_gene</td><td class="num">48,810,390</td><td>Enhancer → Target (regulates)</td><td class="fi"><span class="pill">Tissue</span></td></tr>
+          <tr><td class="mono">biosample</td><td class="num">35,744</td><td>Biosample node + hierarchy</td><td class="fi"><span class="pill">Tissue</span></td></tr>
+          <tr><td class="mono">expression</td><td class="num">50,482</td><td>Target → Biosample (expressed_in, baseline)</td><td class="fi"><span class="pill">Tissue</span></td></tr>
+          <tr><td class="mono">go</td><td class="num">48,251</td><td>GO term node + DAG</td><td class="fo"><span class="pill">Ontology</span></td></tr>
+          <tr><td class="mono">so</td><td class="num">2,615</td><td>Sequence Ontology term node</td><td class="fo"><span class="pill">Ontology</span></td></tr>
+          <tr><td class="mono">mouse_phenotype</td><td class="num">210,538</td><td>Target → Mouse Phenotype (model_phenotype)</td><td class="fo"><span class="pill">Ontology</span></td></tr>
+          <tr><td class="mono">interaction</td><td class="num">14,618,053</td><td>Target ↔ Target (interacts_with, scored)</td><td class="ft"><span class="pill">Target</span></td></tr>
+          <tr><td class="mono">interaction_evidence</td><td class="num">27,432,165</td><td>PPI evidence (method, publication)</td><td class="ft"><span class="pill">Target</span></td></tr>
+          <tr><td class="mono">literature</td><td class="num">163,972,906</td><td>Publication → entity (mentions)</td><td class="fl"><span class="pill">Literature</span></td></tr>
+          <tr><td class="mono">literature_vector</td><td class="num">58,057</td><td>Word/entity embeddings</td><td class="fl"><span class="pill">Literature</span></td></tr>
+          <tr><td class="mono">association_overall_direct</td><td class="num">4,508,002</td><td>Target → Disease (associated_with)</td><td class="ft"><span class="pill">Assoc.</span></td></tr>
+          <tr><td class="mono">association_overall_indirect</td><td class="num">12,466,856</td><td>Target → Disease (ontology-propagated)</td><td class="ft"><span class="pill">Assoc.</span></td></tr>
+          <tr><td class="mono">association_by_datatype_direct</td><td class="num">4,705,908</td><td>Association split by datatype</td><td class="ft"><span class="pill">Assoc.</span></td></tr>
+          <tr><td class="mono">association_by_datatype_indirect</td><td class="num">14,567,616</td><td>Association split by datatype (indirect)</td><td class="ft"><span class="pill">Assoc.</span></td></tr>
+          <tr><td class="mono">association_by_datasource_direct</td><td class="num">4,732,211</td><td>Association split by datasource</td><td class="ft"><span class="pill">Assoc.</span></td></tr>
+          <tr><td class="mono">association_by_datasource_indirect</td><td class="num">14,921,411</td><td>Association split by datasource (indirect)</td><td class="ft"><span class="pill">Assoc.</span></td></tr>
+          <tr><td class="mono">evidence_gwas_credible_sets</td><td class="num">3,029,759</td><td>Target → Disease evidence (genetic)</td><td class="fv"><span class="pill">Evidence</span></td></tr>
+          <tr><td class="mono">evidence_eva</td><td class="num">4,035,263</td><td>Target → Disease evidence (ClinVar germline)</td><td class="fv"><span class="pill">Evidence</span></td></tr>
+          <tr><td class="mono">evidence_eva_somatic</td><td class="num">9,366</td><td>Target → Disease evidence (somatic)</td><td class="fv"><span class="pill">Evidence</span></td></tr>
+          <tr><td class="mono">evidence_gene_burden</td><td class="num">40,444</td><td>Target → Disease evidence (rare-variant burden)</td><td class="fv"><span class="pill">Evidence</span></td></tr>
+          <tr><td class="mono">evidence_genomics_england</td><td class="num">46,905</td><td>Target → Disease evidence (PanelApp)</td><td class="fv"><span class="pill">Evidence</span></td></tr>
+          <tr><td class="mono">evidence_gene2phenotype</td><td class="num">5,026</td><td>Target → Disease evidence (curated gene panels)</td><td class="fv"><span class="pill">Evidence</span></td></tr>
+          <tr><td class="mono">evidence_clingen</td><td class="num">3,894</td><td>Target → Disease evidence (ClinGen)</td><td class="fv"><span class="pill">Evidence</span></td></tr>
+          <tr><td class="mono">evidence_orphanet</td><td class="num">7,245</td><td>Target → Disease evidence (rare disease)</td><td class="fv"><span class="pill">Evidence</span></td></tr>
+          <tr><td class="mono">evidence_uniprot_literature</td><td class="num">6,682</td><td>Target → Disease evidence (UniProt)</td><td class="fv"><span class="pill">Evidence</span></td></tr>
+          <tr><td class="mono">evidence_uniprot_variants</td><td class="num">36,814</td><td>Target → Disease evidence (UniProt variants)</td><td class="fv"><span class="pill">Evidence</span></td></tr>
+          <tr><td class="mono">evidence_cancer_gene_census</td><td class="num">91,572</td><td>Target → Disease evidence (COSMIC CGC)</td><td class="fd"><span class="pill">Evidence</span></td></tr>
+          <tr><td class="mono">evidence_intogen</td><td class="num">4,223</td><td>Target → Disease evidence (cancer drivers)</td><td class="fd"><span class="pill">Evidence</span></td></tr>
+          <tr><td class="mono">evidence_cancer_biomarkers</td><td class="num">1,301</td><td>Biomarker → drug response evidence</td><td class="fd"><span class="pill">Evidence</span></td></tr>
+          <tr><td class="mono">evidence_clinical_precedence</td><td class="num">599,344</td><td>Target → Disease evidence (ChEMBL known drugs)</td><td class="fr"><span class="pill">Evidence</span></td></tr>
+          <tr><td class="mono">evidence_crispr</td><td class="num">517</td><td>Target → Disease evidence (CRISPR, curated)</td><td class="fi"><span class="pill">Evidence</span></td></tr>
+          <tr><td class="mono">evidence_crispr_screen</td><td class="num">21,659</td><td>Target → Disease evidence (CRISPR screens)</td><td class="fi"><span class="pill">Evidence</span></td></tr>
+          <tr><td class="mono">evidence_expression_atlas</td><td class="num">237,329</td><td>Target → Disease evidence (differential expr.)</td><td class="fi"><span class="pill">Evidence</span></td></tr>
+          <tr><td class="mono">evidence_impc</td><td class="num">1,522,457</td><td>Target → Disease evidence (mouse KO)</td><td class="fo"><span class="pill">Evidence</span></td></tr>
+          <tr><td class="mono">evidence_reactome</td><td class="num">10,748</td><td>Target → Disease evidence (pathway)</td><td class="fo"><span class="pill">Evidence</span></td></tr>
+          <tr><td class="mono">evidence_europepmc</td><td class="num">24,376,290</td><td>Target → Disease evidence (text-mined)</td><td class="fl"><span class="pill">Evidence</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <footer>
+    <p><b>Build notes.</b> Recommended identifiers as primary keys: Target = Ensembl gene
+      (<code class="mono">ENSG…</code>), Disease = EFO/MONDO/HP, Drug = ChEMBL, Variant =
+      <code class="mono">chr_pos_ref_alt</code>. Struct/array columns (e.g. <code class="mono">locus[]</code>,
+      <code class="mono">transcriptConsequences[]</code>, <code class="mono">drugs[]</code>) are exploded into
+      edges. Materialise the <span class="rel">associated_with</span> spine from the pre-scored
+      <code class="mono">association_overall</code> tables and keep the 20 <code class="mono">evidence_*</code>
+      sources as provenance edges. Loaders: Neo4j <code>LOAD CSV</code>/<code>apoc.load.parquet</code>,
+      or an RDF/property-graph exporter over the same parquet.</p>
+    <p class="disc">Prepared from a field-level scan of the Open Targets Platform 26.03 parquet release
+      (55 datasets). Row counts are on-disk totals and are not de-duplicated across partitions. This is an
+      independent schema proposal, not official Open Targets documentation. Open Targets data is released
+      under CC0.</p>
+  </footer>
+  </main>
+</div>
+</div>
