@@ -1,0 +1,654 @@
+<title>Open Targets KG Atlas</title>
+<meta name="description" content="What the filtered Open Targets Neo4j graph can power — applications grouped by theme, each mapped to its traversal path and a runnable query.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,600;12..96,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+  :root{
+    --paper:#EEF0F3; --surface:#FBFCFD; --surface-2:#F3F5F8;
+    --ink:#14171F; --strong:#000; --muted:#5A6170; --faint:#8A909C;
+    --line:#DDE1E8; --line-2:#E9ECF1;
+    --gen:#0F7A72; --drug:#A55C2B; --func:#4E5AA6; --onto:#6E7A6B;
+    --accent:#0F7A72; --accent-ink:#0B5A54;
+    --good:#2E7D5B; --warn:#9A7220; --crit:#AF3A48;
+    --chip:#E7EBEF; --chip-ink:#3B424E;
+    --shadow:0 1px 2px rgba(20,23,31,.05), 0 6px 20px rgba(20,23,31,.05);
+    --radius:14px;
+  }
+  @media (prefers-color-scheme:dark){
+    :root:not([data-theme="light"]){
+      --paper:#0C0F14; --surface:#141922; --surface-2:#10151D;
+      --ink:#E7EAF0; --strong:#fff; --muted:#98A0AF; --faint:#6C7484;
+      --line:#242B36; --line-2:#1C222C;
+      --gen:#43B8AE; --drug:#D3894F; --func:#8C93DE; --onto:#9FB09A;
+      --accent:#43B8AE; --accent-ink:#7FD3CB;
+      --good:#4BAE82; --warn:#C99A3E; --crit:#D96A76;
+      --chip:#1E2530; --chip-ink:#B9C0CC;
+      --shadow:0 1px 2px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.32);
+    }
+  }
+  :root[data-theme="dark"]{
+    --paper:#0C0F14; --surface:#141922; --surface-2:#10151D;
+    --ink:#E7EAF0; --strong:#fff; --muted:#98A0AF; --faint:#6C7484;
+    --line:#242B36; --line-2:#1C222C;
+    --gen:#43B8AE; --drug:#D3894F; --func:#8C93DE; --onto:#9FB09A;
+    --accent:#43B8AE; --accent-ink:#7FD3CB;
+    --good:#4BAE82; --warn:#C99A3E; --crit:#D96A76;
+    --chip:#1E2530; --chip-ink:#B9C0CC;
+    --shadow:0 1px 2px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.32);
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; background:var(--paper); color:var(--ink);
+    font-family:"IBM Plex Sans",system-ui,-apple-system,sans-serif;
+    font-size:15px; line-height:1.6; -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:1140px; margin:0 auto; padding-inline:20px}
+  h1,h2,h3{font-family:"Bricolage Grotesque","IBM Plex Sans",sans-serif; text-wrap:balance; margin:0}
+  code,.mono{font-family:"IBM Plex Mono",ui-monospace,monospace}
+  a{color:var(--accent-ink)}
+
+  /* header */
+  header{padding-block:44px 30px; border-bottom:1px solid var(--line)}
+  .eyebrow{font:500 12px/1 "IBM Plex Mono",monospace; letter-spacing:.16em; text-transform:uppercase; color:var(--accent-ink); margin-bottom:16px}
+  h1{font-weight:700; font-size:clamp(30px,5.2vw,50px); line-height:1.02; letter-spacing:-.02em}
+  .lede{margin-top:14px; max-width:64ch; color:var(--muted); font-size:clamp(15px,2vw,17px)}
+  .stats{display:flex; flex-wrap:wrap; gap:10px; margin-top:26px}
+  .stat{flex:1 1 150px; background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:14px 16px}
+  .stat .n{font-family:"Bricolage Grotesque",sans-serif; font-weight:700; font-size:26px; letter-spacing:-.02em; font-variant-numeric:tabular-nums; color:var(--strong)}
+  .stat .l{font-size:12.5px; color:var(--muted); margin-top:2px}
+
+  section{padding-block:38px; border-bottom:1px solid var(--line)}
+  .kicker{font:500 12px/1 "IBM Plex Mono",monospace; letter-spacing:.14em; text-transform:uppercase; color:var(--faint); margin-bottom:10px}
+  h2{font-weight:600; font-size:clamp(21px,3vw,27px); letter-spacing:-.01em}
+  .sub{color:var(--muted); margin-top:8px; max-width:70ch}
+
+  /* inventory bars */
+  .legend{display:flex; flex-wrap:wrap; gap:14px; margin:18px 0 22px; font-size:12.5px; color:var(--muted)}
+  .legend span{display:inline-flex; align-items:center; gap:6px}
+  .dot{width:10px; height:10px; border-radius:3px; display:inline-block}
+  .bars{display:grid; gap:7px}
+  .bar-row{display:grid; grid-template-columns:180px 1fr 92px; align-items:center; gap:12px}
+  .bar-lab{font:500 12.5px/1.3 "IBM Plex Mono",monospace; color:var(--ink); overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+  .bar-track{height:16px; background:var(--surface-2); border-radius:5px; overflow:hidden}
+  .bar-fill{height:100%; border-radius:5px; min-width:3px}
+  .bar-val{font-variant-numeric:tabular-nums; text-align:right; font-size:12.5px; color:var(--muted)}
+
+  /* schema */
+  .schema{background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); padding:20px; box-shadow:var(--shadow); overflow-x:auto}
+  .schema svg{display:block; min-width:640px; width:100%; height:auto}
+  .nlab{font-family:"IBM Plex Mono",monospace; font-size:12px; fill:var(--strong)}
+  .elab{font-family:"IBM Plex Mono",monospace; font-size:10.5px; fill:var(--muted)}
+  .node-box{fill:var(--surface-2); stroke:var(--line); stroke-width:1.5}
+  .edge-line{stroke:var(--faint); stroke-width:1.5; fill:none}
+  .verify{margin-top:14px; font-size:13px; color:var(--muted)}
+  .verify code{background:var(--surface-2); padding:1px 6px; border-radius:5px; font-size:12px}
+
+  /* filter bar */
+  .toolbar{position:sticky; top:0; z-index:5; background:color-mix(in srgb, var(--paper) 88%, transparent); backdrop-filter:blur(8px); padding-block:12px; border-bottom:1px solid var(--line); margin-inline:-20px; padding-inline:20px; display:flex; flex-wrap:wrap; gap:8px; align-items:center}
+  .filter{font:500 12.5px/1 "IBM Plex Sans",sans-serif; color:var(--chip-ink); background:var(--chip); border:1px solid transparent; padding:7px 12px; border-radius:999px; cursor:pointer}
+  .filter[aria-pressed="true"]{background:var(--ink); color:var(--paper)}
+  .filter:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
+  .spacer{flex:1}
+  .qtoggle{margin-left:auto}
+
+  /* application cards */
+  .theme-head{display:flex; align-items:baseline; gap:12px; margin:26px 0 14px}
+  .theme-head h3{font-weight:600; font-size:19px}
+  .theme-tag{font:500 11px/1 "IBM Plex Mono",monospace; letter-spacing:.1em; text-transform:uppercase; padding:5px 9px; border-radius:6px; color:#fff}
+  .grid{display:grid; grid-template-columns:repeat(2,1fr); gap:14px}
+  .card{background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); padding:18px 18px 16px; box-shadow:var(--shadow); display:flex; flex-direction:column; gap:11px}
+  .card h4{font-family:"Bricolage Grotesque",sans-serif; font-weight:600; font-size:16.5px; margin:0; letter-spacing:-.01em; color:var(--strong)}
+  .card p{margin:0; font-size:13.7px; color:var(--muted)}
+  .path{display:flex; flex-wrap:wrap; align-items:center; gap:4px}
+  .path .n{font:500 11px/1 "IBM Plex Mono",monospace; background:var(--surface-2); border:1px solid var(--line-2); padding:3px 7px; border-radius:5px; color:var(--ink)}
+  .path .e{font:500 10px/1 "IBM Plex Mono",monospace; color:var(--accent-ink); padding:0 1px; letter-spacing:.02em}
+  .path .arrow{color:var(--faint); font-size:11px}
+  .pills{display:flex; flex-wrap:wrap; gap:6px; margin-top:1px}
+  .pill{font:500 10.5px/1 "IBM Plex Mono",monospace; padding:4px 8px; border-radius:999px; border:1px solid var(--line-2); color:var(--muted); background:var(--surface-2)}
+  .pill.dep{color:var(--warn); border-color:color-mix(in srgb,var(--warn) 40%, var(--line))}
+  .pill.lic{color:var(--crit); border-color:color-mix(in srgb,var(--crit) 40%, var(--line))}
+  .pill.core{color:var(--good); border-color:color-mix(in srgb,var(--good) 40%, var(--line))}
+  details{margin-top:2px}
+  details>summary{cursor:pointer; font:500 12px/1 "IBM Plex Mono",monospace; color:var(--accent-ink); list-style:none; padding:5px 0; user-select:none}
+  details>summary::-webkit-details-marker{display:none}
+  details>summary::before{content:"▸ "; color:var(--faint)}
+  details[open]>summary::before{content:"▾ "}
+  pre{margin:8px 0 0; background:var(--surface-2); border:1px solid var(--line-2); border-radius:9px; padding:12px; overflow-x:auto; font-size:12px; line-height:1.5}
+  pre code{color:var(--ink)}
+  .k{color:var(--accent-ink); font-weight:500}
+
+  footer{padding-block:34px 60px; color:var(--muted); font-size:13px}
+  footer h2{margin-bottom:12px}
+  footer p{max-width:78ch; margin:0 0 12px}
+  .hl{color:var(--ink); font-weight:500}
+
+  @media (max-width:720px){
+    .grid{grid-template-columns:1fr}
+    .bar-row{grid-template-columns:130px 1fr 74px; gap:9px}
+    .bar-lab{font-size:11px}
+  }
+  @media (prefers-reduced-motion:reduce){*{transition:none!important; animation:none!important}}
+</style>
+
+<div class="wrap">
+<header>
+  <div class="eyebrow">Open Targets · Neo4j · post-QC build</div>
+  <h1>Knowledge Graph Application Atlas</h1>
+  <p class="lede">What the filtered graph can actually power. Every application below is mapped to the relationships it traverses and a query you can run — grounded in your current edge inventory, not a generic catalogue.</p>
+  <div class="stats">
+    <div class="stat"><div class="n">85.9M</div><div class="l">relationships across 25 types</div></div>
+    <div class="stat"><div class="n">~82%</div><div class="l">smaller than the 483M raw load</div></div>
+    <div class="stat"><div class="n">30</div><div class="l">applications, 9 themes</div></div>
+    <div class="stat"><div class="n">12</div><div class="l">inferred node classes</div></div>
+  </div>
+</header>
+
+<section>
+  <div class="kicker">The graph at a glance</div>
+  <h2>Where the mass sits after filtering</h2>
+  <p class="sub">Two genetics edge types — fine-mapping membership and GWAS associations — still hold two-thirds of the graph. The drug, phenotype and ontology layers are small but carry most of the interpretive value per edge.</p>
+  <div class="legend">
+    <span><i class="dot" style="background:var(--gen)"></i> Genetics / GWAS</span>
+    <span><i class="dot" style="background:var(--func)"></i> Expression / network</span>
+    <span><i class="dot" style="background:var(--drug)"></i> Drug / clinical</span>
+    <span><i class="dot" style="background:var(--onto)"></i> Phenotype / ontology</span>
+  </div>
+  <div class="bars" id="bars"></div>
+</section>
+
+<section>
+  <div class="kicker">Inferred schema</div>
+  <h2>The spine the applications traverse</h2>
+  <p class="sub">Node labels and directions are inferred from the relationship names — the genetics core runs variant → credible set → study → disease, with locus-to-gene and consequence edges landing on targets, and the drug/clinical layer hanging off targets and diseases.</p>
+  <div class="schema">
+    <svg viewBox="0 0 720 300" role="img" aria-label="Core schema: variant to credible set to study to disease, with L2G and consequence edges to target, and drug and expression layers.">
+      <!-- edges -->
+      <path class="edge-line" d="M96,64 H196"/><text class="elab" x="146" y="56" text-anchor="middle">IN_CREDIBLE_SET</text>
+      <path class="edge-line" d="M296,64 H396"/><text class="elab" x="346" y="56" text-anchor="middle">FROM_STUDY</text>
+      <path class="edge-line" d="M496,64 H596"/><text class="elab" x="546" y="56" text-anchor="middle">STUDIES</text>
+      <path class="edge-line" d="M246,88 L246,200 L316,200"/><text class="elab" x="250" y="150" text-anchor="start">L2G</text>
+      <path class="edge-line" d="M60,88 L60,200 L316,200"/><text class="elab" x="66" y="150" text-anchor="start">MOST_SEVERE_CONSEQUENCE</text>
+      <path class="edge-line" d="M420,224 L420,252 H360 V216"/><text class="elab" x="426" y="244" text-anchor="start">TARGETS / CLINICALLY_TARGETS</text>
+      <path class="edge-line" d="M470,200 H556"/><text class="elab" x="512" y="192" text-anchor="middle">EXPRESSED_IN</text>
+      <path class="edge-line" d="M645,88 L645,180"/><text class="elab" x="651" y="140" text-anchor="start">INDICATED_FOR</text>
+      <path class="edge-line" d="M340,216 C300,260 470,270 430,232"/><text class="elab" x="360" y="284" text-anchor="middle">INTERACTS_WITH</text>
+      <!-- nodes -->
+      <g><rect class="node-box" x="18" y="46" width="80" height="36" rx="8"/><text class="nlab" x="58" y="68" text-anchor="middle">Variant</text></g>
+      <g><rect class="node-box" x="196" y="46" width="100" height="36" rx="8"/><text class="nlab" x="246" y="68" text-anchor="middle">CredibleSet</text></g>
+      <g><rect class="node-box" x="396" y="46" width="100" height="36" rx="8"/><text class="nlab" x="446" y="68" text-anchor="middle">Study</text></g>
+      <g><rect class="node-box" x="596" y="46" width="100" height="36" rx="8"/><text class="nlab" x="646" y="68" text-anchor="middle">Disease</text></g>
+      <g><rect class="node-box" x="316" y="182" width="104" height="36" rx="8" style="stroke:var(--gen)"/><text class="nlab" x="368" y="204" text-anchor="middle">Target</text></g>
+      <g><rect class="node-box" x="556" y="182" width="92" height="36" rx="8"/><text class="nlab" x="602" y="204" text-anchor="middle">Tissue</text></g>
+      <g><rect class="node-box" x="596" y="180" width="0" height="0"/></g>
+    </svg>
+  </div>
+  <p class="verify">Confirm the real labels and directions before building on any query below — <code>CALL db.schema.visualization()</code> renders the actual model, and <code>CALL db.schema.relTypeProperties()</code> lists the properties (and types) on each relationship.</p>
+</section>
+
+<div class="toolbar" id="toolbar" role="group" aria-label="Filter applications by theme">
+  <button class="filter" data-f="all" aria-pressed="true">All</button>
+  <button class="filter" data-f="discovery" aria-pressed="false">Discovery</button>
+  <button class="filter" data-f="validation" aria-pressed="false">Validation</button>
+  <button class="filter" data-f="safety" aria-pressed="false">Safety</button>
+  <button class="filter" data-f="repurposing" aria-pressed="false">Repurposing</button>
+  <button class="filter" data-f="variant" aria-pressed="false">Variant</button>
+  <button class="filter" data-f="disease" aria-pressed="false">Disease</button>
+  <button class="filter" data-f="network" aria-pressed="false">Network</button>
+  <button class="filter" data-f="biologics" aria-pressed="false">Biologics</button>
+  <button class="filter" data-f="ml" aria-pressed="false">Graph ML</button>
+  <button class="filter qtoggle" id="qtoggle" aria-pressed="false">Show all queries</button>
+</div>
+
+<section id="apps" style="border-bottom:none">
+  <!-- ============ DISCOVERY ============ -->
+  <div class="theme-block" data-theme="discovery">
+    <div class="theme-head"><span class="theme-tag" style="background:var(--gen)">01 · Genetic target discovery</span></div>
+    <div class="grid">
+
+      <div class="card">
+        <h4>Disease → causal genes</h4>
+        <div class="path"><span class="n">Disease</span><span class="arrow">←</span><span class="e">STUDIES</span><span class="n">Study</span><span class="arrow">←</span><span class="e">FROM_STUDY</span><span class="n">CredibleSet</span><span class="arrow">→</span><span class="e">L2G</span><span class="n">Target</span></div>
+        <p>The core Open Targets workflow: fine-mapped GWAS signals resolved to their most likely gene. This is your primary genetically-supported target list per indication.</p>
+        <div class="pills"><span class="pill core">core Cypher</span></div>
+        <details><summary>Query</summary><pre><code><span class="k">MATCH</span> (d:Disease {id:$efo})&lt;-[:STUDIES]-(s:Study)
+      &lt;-[:FROM_STUDY]-(cs:CredibleSet)-[l:L2G]-&gt;(t:Target)
+<span class="k">WHERE</span> l.score &gt;= 0.5
+<span class="k">RETURN</span> t.approvedSymbol, max(l.score) AS l2g,
+       count(<span class="k">DISTINCT</span> s) AS studies
+<span class="k">ORDER BY</span> l2g DESC</code></pre></details>
+      </div>
+
+      <div class="card">
+        <h4>Variant-to-gene assignment</h4>
+        <div class="path"><span class="n">Variant</span><span class="arrow">→</span><span class="e">IN_CREDIBLE_SET</span><span class="n">CredibleSet</span><span class="arrow">→</span><span class="e">L2G</span><span class="n">Target</span></div>
+        <p>Given a lead or candidate variant, rank the genes it most plausibly acts through — the read-out a variant-interpretation tool sits on top of.</p>
+        <div class="pills"><span class="pill core">core Cypher</span></div>
+        <details><summary>Query</summary><pre><code><span class="k">MATCH</span> (v:Variant {id:$vid})-[:IN_CREDIBLE_SET]-&gt;
+      (:CredibleSet)-[l:L2G]-&gt;(t:Target)
+<span class="k">RETURN</span> t.approvedSymbol, l.score
+<span class="k">ORDER BY</span> l.score DESC</code></pre></details>
+      </div>
+
+      <div class="card">
+        <h4>Coding-variant target evidence</h4>
+        <div class="path"><span class="n">Variant</span><span class="arrow">→</span><span class="e">ASSOCIATED_WITH</span><span class="n">Disease</span> · <span class="n">Variant</span><span class="arrow">→</span><span class="e">MOST_SEVERE_CONSEQUENCE</span><span class="n">Target</span></div>
+        <p>Targets where a disease-associated variant has direct HIGH/MODERATE protein impact — the strongest, most interpretable class of genetic evidence.</p>
+        <div class="pills"><span class="pill dep">needs: consequence impact field</span></div>
+        <details><summary>Query</summary><pre><code><span class="k">MATCH</span> (v:Variant)-[:ASSOCIATED_WITH]-&gt;(d:Disease {id:$efo})
+<span class="k">MATCH</span> (v)-[c:MOST_SEVERE_CONSEQUENCE]-&gt;(t:Target)
+<span class="k">WHERE</span> c.impact <span class="k">IN</span> ['HIGH','MODERATE']
+<span class="k">RETURN</span> t.approvedSymbol, collect(<span class="k">DISTINCT</span> c.label) AS csq,
+       count(<span class="k">DISTINCT</span> v) AS variants
+<span class="k">ORDER BY</span> variants DESC</code></pre></details>
+      </div>
+
+      <div class="card">
+        <h4>Pleiotropy scan</h4>
+        <div class="path"><span class="n">Target</span><span class="arrow">←</span><span class="e">L2G</span><span class="n">CredibleSet</span><span class="arrow">→…→</span><span class="n">Disease</span> ×N</div>
+        <p>Targets genetically linked to many distinct diseases. Reads two ways: a repurposing / master-regulator hub, or an on-target safety flag for broad phenotypic consequence.</p>
+        <details><summary>Query</summary><pre><code><span class="k">MATCH</span> (t:Target)&lt;-[l:L2G]-(:CredibleSet)
+      -[:FROM_STUDY]-&gt;(:Study)-[:STUDIES]-&gt;(d:Disease)
+<span class="k">WHERE</span> l.score &gt;= 0.5
+<span class="k">WITH</span> t, count(<span class="k">DISTINCT</span> d) AS diseases
+<span class="k">WHERE</span> diseases &gt;= 5
+<span class="k">RETURN</span> t.approvedSymbol, diseases <span class="k">ORDER BY</span> diseases DESC</code></pre></details>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ============ VALIDATION ============ -->
+  <div class="theme-block" data-theme="validation">
+    <div class="theme-head"><span class="theme-tag" style="background:var(--gen)">02 · Target validation &amp; prioritisation</span></div>
+    <div class="grid">
+
+      <div class="card">
+        <h4>Composite multi-evidence score</h4>
+        <div class="path"><span class="n">Target</span> · <span class="e">L2G + EXPRESSED_IN + PARTICIPATES_IN + HAS_MODEL_PHENOTYPE + INTERACTS_WITH</span></div>
+        <p>Aggregate genetic, expression, pathway, model-organism and network evidence per target–disease pair into one tunable score — the backbone of a prioritisation dashboard.</p>
+        <div class="pills"><span class="pill">weighting is yours to set</span></div>
+        <details><summary>Query sketch</summary><pre><code><span class="k">MATCH</span> (t:Target {id:$ens})
+<span class="k">OPTIONAL MATCH</span> (t)&lt;-[l:L2G]-(:CredibleSet)-[:FROM_STUDY]-&gt;
+              (:Study)-[:STUDIES]-&gt;(:Disease {id:$efo})
+<span class="k">OPTIONAL MATCH</span> (t)-[e:EXPRESSED_IN]-&gt;(:Tissue {id:$tissue})
+<span class="k">OPTIONAL MATCH</span> (t)-[:HAS_MODEL_PHENOTYPE]-&gt;(mp)
+<span class="k">RETURN</span> t.approvedSymbol,
+       max(l.score) AS genetic,
+       max(e.rna)   AS expression,
+       count(<span class="k">DISTINCT</span> mp) AS model_phenos</code></pre></details>
+      </div>
+
+      <div class="card">
+        <h4>Tissue-selective target filter</h4>
+        <div class="path"><span class="n">Target</span><span class="arrow">→</span><span class="e">EXPRESSED_IN</span><span class="n">Tissue</span></div>
+        <p>Keep targets expressed in the disease-relevant tissue and low elsewhere — the expression-selectivity screen that defines a therapeutic window.</p>
+        <div class="pills"><span class="pill dep">needs: expression level field</span></div>
+        <details><summary>Query</summary><pre><code><span class="k">MATCH</span> (t:Target {id:$ens})-[e:EXPRESSED_IN]-&gt;(tis:Tissue)
+<span class="k">RETURN</span> tis.name, e.rna, e.protein
+<span class="k">ORDER BY</span> e.rna DESC</code></pre></details>
+      </div>
+
+      <div class="card">
+        <h4>Mouse–human phenotype concordance</h4>
+        <div class="path"><span class="n">Target</span><span class="arrow">→</span><span class="e">HAS_MODEL_PHENOTYPE</span><span class="n">MousePhenotype</span> ↔ <span class="n">Disease</span><span class="arrow">→</span><span class="e">HAS_PHENOTYPE</span></div>
+        <p>Does perturbing the target in mouse recapitulate the human disease phenotype? Strong orthogonal validation, bridged through the phenotype ontology.</p>
+        <div class="pills"><span class="pill dep">needs: HPO↔MP mapping</span></div>
+      </div>
+
+      <div class="card">
+        <h4>PPI neighbourhood &amp; backups</h4>
+        <div class="path"><span class="n">Target</span><span class="arrow">↔</span><span class="e">INTERACTS_WITH</span><span class="n">Target</span></div>
+        <p>Expand a validated target to its high-confidence interaction partners — backup targets in the same complex or pathway when the primary is undruggable.</p>
+        <details><summary>Query</summary><pre><code><span class="k">MATCH</span> (t:Target {id:$ens})-[r:INTERACTS_WITH]-(n:Target)
+<span class="k">WHERE</span> r.score &gt;= 0.5
+<span class="k">RETURN</span> n.approvedSymbol, r.score, r.source
+<span class="k">ORDER BY</span> r.score DESC</code></pre></details>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ============ SAFETY ============ -->
+  <div class="theme-block" data-theme="safety">
+    <div class="theme-head"><span class="theme-tag" style="background:var(--drug)">03 · Safety &amp; de-risking</span></div>
+    <div class="grid">
+
+      <div class="card">
+        <h4>Target adverse-event profile</h4>
+        <div class="path"><span class="n">Drug</span><span class="arrow">→</span><span class="e">TARGETS</span><span class="n">Target</span> · <span class="n">Drug</span><span class="arrow">→</span><span class="e">HAS_ADVERSE_EVENT</span><span class="n">Event</span></div>
+        <p>Aggregate the adverse events reported across every drug that hits a target — an empirical, on-target safety signature before you commit to it.</p>
+        <details><summary>Query</summary><pre><code><span class="k">MATCH</span> (dr:Drug)-[:TARGETS|CLINICALLY_TARGETS]-&gt;(t:Target {id:$ens})
+<span class="k">MATCH</span> (dr)-[:HAS_ADVERSE_EVENT]-&gt;(ae)
+<span class="k">RETURN</span> ae.name, count(<span class="k">DISTINCT</span> dr) AS drugs
+<span class="k">ORDER BY</span> drugs DESC</code></pre></details>
+      </div>
+
+      <div class="card">
+        <h4>Broad-expression toxicity risk</h4>
+        <div class="path"><span class="n">Target</span><span class="arrow">→</span><span class="e">EXPRESSED_IN</span><span class="n">Tissue</span> ×N</div>
+        <p>Count the tissues where a target is meaningfully expressed — ubiquitous expression is a first-order flag for on-target off-tissue toxicity.</p>
+        <div class="pills"><span class="pill dep">needs: expression level field</span></div>
+        <details><summary>Query</summary><pre><code><span class="k">MATCH</span> (t:Target {id:$ens})-[e:EXPRESSED_IN]-&gt;(tis:Tissue)
+<span class="k">WHERE</span> e.rna &gt;= $cutoff
+<span class="k">RETURN</span> count(<span class="k">DISTINCT</span> tis) AS tissues_expressed</code></pre></details>
+      </div>
+
+      <div class="card">
+        <h4>Pharmacogenomics &amp; warnings</h4>
+        <div class="path"><span class="n">Drug</span><span class="arrow">→</span><span class="e">HAS_PGX</span> · <span class="e">HAS_WARNING</span></div>
+        <p>Surface pharmacogenomic liabilities and black-box warnings attached to drugs against a target — known clinical safety baggage for the mechanism.</p>
+        <details><summary>Query</summary><pre><code><span class="k">MATCH</span> (dr:Drug)-[:TARGETS]-&gt;(t:Target {id:$ens})
+<span class="k">OPTIONAL MATCH</span> (dr)-[:HAS_PGX]-&gt;(p)
+<span class="k">OPTIONAL MATCH</span> (dr)-[:HAS_WARNING]-&gt;(w)
+<span class="k">RETURN</span> dr.name, collect(<span class="k">DISTINCT</span> p.label) AS pgx,
+       collect(<span class="k">DISTINCT</span> w.description) AS warnings</code></pre></details>
+      </div>
+
+      <div class="card">
+        <h4>Genetic-constraint context</h4>
+        <div class="path"><span class="n">Target</span> · pleiotropy + phenotype breadth</div>
+        <p>Combine the pleiotropy scan with model- and human-phenotype breadth to estimate how phenotypically "loud" a target's perturbation is — a proxy for tolerability.</p>
+        <div class="pills"><span class="pill">derived metric</span></div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ============ REPURPOSING ============ -->
+  <div class="theme-block" data-theme="repurposing">
+    <div class="theme-head"><span class="theme-tag" style="background:var(--drug)">04 · Repurposing &amp; indication expansion</span></div>
+    <div class="grid">
+
+      <div class="card">
+        <h4>Genetically-supported repurposing</h4>
+        <div class="path"><span class="n">Drug</span><span class="arrow">→</span><span class="e">TARGETS</span><span class="n">Target</span><span class="arrow">←</span><span class="e">L2G</span><span class="n">…</span><span class="arrow">→</span><span class="n">Disease′</span></div>
+        <p>A drug whose target is genetically linked to a disease it is <em>not</em> yet indicated for — the highest-value repurposing signal in the graph, with a whitespace filter built in.</p>
+        <div class="pills"><span class="pill core">core Cypher</span></div>
+        <details><summary>Query</summary><pre><code><span class="k">MATCH</span> (dr:Drug)-[:TARGETS]-&gt;(t:Target)&lt;-[l:L2G]-(:CredibleSet)
+      -[:FROM_STUDY]-&gt;(:Study)-[:STUDIES]-&gt;(d2:Disease)
+<span class="k">WHERE</span> l.score &gt;= 0.5 <span class="k">AND NOT</span> (dr)-[:INDICATED_FOR]-&gt;(d2)
+<span class="k">RETURN</span> dr.name, t.approvedSymbol, d2.name, l.score
+<span class="k">ORDER BY</span> l.score DESC</code></pre></details>
+      </div>
+
+      <div class="card">
+        <h4>Indication landscape &amp; whitespace</h4>
+        <div class="path"><span class="n">Drug</span><span class="arrow">→</span><span class="e">INDICATED_FOR / INVESTIGATES / TESTED_IN</span><span class="n">Disease</span></div>
+        <p>Map where a drug or mechanism is already approved versus merely in trials versus untouched — the competitive whitespace view for a target class.</p>
+        <details><summary>Query</summary><pre><code><span class="k">MATCH</span> (dr:Drug)-[:TARGETS]-&gt;(:Target {id:$ens})
+<span class="k">OPTIONAL MATCH</span> (dr)-[:INDICATED_FOR]-&gt;(app:Disease)
+<span class="k">OPTIONAL MATCH</span> (dr)-[:INVESTIGATES|TESTED_IN]-&gt;(trial)
+<span class="k">RETURN</span> dr.name, collect(<span class="k">DISTINCT</span> app.name) AS approved,
+       count(<span class="k">DISTINCT</span> trial) AS trials</code></pre></details>
+      </div>
+
+      <div class="card">
+        <h4>Clinical-precedence scoring</h4>
+        <div class="path"><span class="n">Target</span><span class="arrow">←</span><span class="e">CLINICALLY_TARGETS / TESTED_IN</span><span class="n">Drug</span></div>
+        <p>Rank targets by depth of existing clinical validation — how far any drug hitting them has advanced. De-risks a novel programme by precedent.</p>
+      </div>
+
+      <div class="card">
+        <h4>Mechanism-shared repurposing</h4>
+        <div class="path"><span class="n">Drug·Target</span><span class="arrow">→</span><span class="e">PARTICIPATES_IN</span><span class="n">Pathway</span><span class="arrow">←</span><span class="n">disease targets</span></div>
+        <p>Find drugs whose target shares a pathway with a disease's genetic targets, even without a direct target hit — pathway-level repurposing hypotheses.</p>
+        <div class="pills"><span class="pill dep">needs: pathway coverage</span></div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ============ VARIANT ============ -->
+  <div class="theme-block" data-theme="variant">
+    <div class="theme-head"><span class="theme-tag" style="background:var(--gen)">05 · Variant interpretation &amp; functional genomics</span></div>
+    <div class="grid">
+
+      <div class="card">
+        <h4>Fine-mapped locus browser</h4>
+        <div class="path"><span class="n">Study</span><span class="arrow">→</span><span class="e">HAS_LEAD_VARIANT</span><span class="n">Variant</span><span class="arrow">→</span><span class="e">IN_CREDIBLE_SET</span><span class="n">CredibleSet</span></div>
+        <p>Reconstruct any study's fine-mapped credible sets and their member variants — the data behind a locus-zoom / signal-explorer interface.</p>
+        <details><summary>Query</summary><pre><code><span class="k">MATCH</span> (s:Study {id:$study})-[:HAS_LEAD_VARIANT]-&gt;(lead:Variant)
+<span class="k">MATCH</span> (cs:CredibleSet)-[:FROM_STUDY]-&gt;(s)
+<span class="k">MATCH</span> (v:Variant)-[m:IN_CREDIBLE_SET]-&gt;(cs)
+<span class="k">RETURN</span> lead.id, v.id, m.posteriorProbability
+<span class="k">ORDER BY</span> m.posteriorProbability DESC</code></pre></details>
+      </div>
+
+      <div class="card">
+        <h4>Molecular QTL linkage</h4>
+        <div class="path"><span class="n">Study</span><span class="arrow">→</span><span class="e">MEASURES</span><span class="n">MolecularTrait</span></div>
+        <p>Connect QTL studies to the molecular trait they measure (e.g. an eQTL for a gene), linking regulatory variants to their target through the study layer.</p>
+        <div class="pills"><span class="pill dep">confirm MEASURES semantics</span></div>
+      </div>
+
+      <div class="card">
+        <h4>Variant functional dossier</h4>
+        <div class="path"><span class="n">Variant</span><span class="arrow">→</span><span class="e">ASSOCIATED_WITH · MOST_SEVERE_CONSEQUENCE · IN_CREDIBLE_SET</span></div>
+        <p>One call assembling everything the graph knows about a variant — its traits, coding consequence, gene assignment and fine-mapping context.</p>
+        <details><summary>Query</summary><pre><code><span class="k">MATCH</span> (v:Variant {id:$vid})
+<span class="k">OPTIONAL MATCH</span> (v)-[:ASSOCIATED_WITH]-&gt;(d:Disease)
+<span class="k">OPTIONAL MATCH</span> (v)-[c:MOST_SEVERE_CONSEQUENCE]-&gt;(t:Target)
+<span class="k">RETURN</span> collect(<span class="k">DISTINCT</span> d.name) AS traits,
+       collect(<span class="k">DISTINCT</span> [t.approvedSymbol, c.impact]) AS consequence</code></pre></details>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ============ DISEASE ============ -->
+  <div class="theme-block" data-theme="disease">
+    <div class="theme-head"><span class="theme-tag" style="background:var(--onto)">06 · Disease &amp; phenotype analytics</span></div>
+    <div class="grid">
+
+      <div class="card">
+        <h4>Disease–disease similarity</h4>
+        <div class="path"><span class="n">Disease</span><span class="arrow">→</span><span class="e">HAS_PHENOTYPE / shared targets</span><span class="arrow">←</span><span class="n">Disease</span></div>
+        <p>Cluster diseases by shared phenotypes or shared genetic targets — surfaces mechanistic overlap, comorbidity and repurposing adjacencies.</p>
+        <details><summary>Query</summary><pre><code><span class="k">MATCH</span> (d1:Disease)-[:HAS_PHENOTYPE]-&gt;(p)&lt;-[:HAS_PHENOTYPE]-(d2:Disease)
+<span class="k">WHERE</span> id(d1) &lt; id(d2)
+<span class="k">RETURN</span> d1.name, d2.name, count(p) AS shared
+<span class="k">ORDER BY</span> shared DESC <span class="k">LIMIT</span> 100</code></pre></details>
+      </div>
+
+      <div class="card">
+        <h4>Ontology roll-up &amp; expansion</h4>
+        <div class="path"><span class="n">Disease</span><span class="arrow">→</span><span class="e">SUBCLASS_OF / IS_A / HAS_PARENT</span><span class="n">Disease</span></div>
+        <p>Propagate evidence up and down the disease hierarchy — aggregate child-disease associations to a parent term. This is the backbone your semantic-search layer already leans on.</p>
+        <div class="pills"><span class="pill core">core Cypher</span></div>
+        <details><summary>Query</summary><pre><code><span class="k">MATCH</span> (child:Disease)-[:SUBCLASS_OF*1..4]-&gt;(d:Disease {id:$efo})
+<span class="k">MATCH</span> (v:Variant)-[:ASSOCIATED_WITH]-&gt;(child)
+<span class="k">RETURN</span> d.name, count(<span class="k">DISTINCT</span> v) AS rolled_up_variants</code></pre></details>
+      </div>
+
+      <div class="card">
+        <h4>Phenotype-driven target search</h4>
+        <div class="path"><span class="n">Phenotype</span><span class="arrow">←</span><span class="e">HAS_MODEL_PHENOTYPE</span><span class="n">Target</span></div>
+        <p>Start from a phenotype of interest and find the targets whose perturbation produces it — a reverse-genetics entry point into target discovery.</p>
+        <details><summary>Query</summary><pre><code><span class="k">MATCH</span> (t:Target)-[:HAS_MODEL_PHENOTYPE]-&gt;(mp {id:$mp})
+<span class="k">RETURN</span> t.approvedSymbol, count(*) AS evidence
+<span class="k">ORDER BY</span> evidence DESC</code></pre></details>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ============ NETWORK ============ -->
+  <div class="theme-block" data-theme="network">
+    <div class="theme-head"><span class="theme-tag" style="background:var(--func)">07 · Pathway &amp; network biology</span></div>
+    <div class="grid">
+
+      <div class="card">
+        <h4>Pathway enrichment of targets</h4>
+        <div class="path"><span class="n">Target</span><span class="arrow">→</span><span class="e">PARTICIPATES_IN</span><span class="n">Pathway</span></div>
+        <p>Test whether a disease's genetic targets concentrate in a pathway — points to pathway-level intervention rather than a single node.</p>
+        <details><summary>Query (observed counts)</summary><pre><code><span class="k">MATCH</span> (t:Target)-[:PARTICIPATES_IN]-&gt;(pw:Pathway)
+<span class="k">WHERE</span> t.id <span class="k">IN</span> $diseaseTargets
+<span class="k">RETURN</span> pw.name, count(*) AS hits
+<span class="k">ORDER BY</span> hits DESC  <span class="k">// feed hits + pathway size to a hypergeometric test</span></code></pre></details>
+      </div>
+
+      <div class="card">
+        <h4>PPI module detection</h4>
+        <div class="path"><span class="n">Target</span><span class="arrow">↔</span><span class="e">INTERACTS_WITH</span><span class="n">Target</span> · community detection</div>
+        <p>Run Louvain / Leiden over the interaction graph to find functional modules — target complexes worth hitting together.</p>
+        <div class="pills"><span class="pill lic">GDS — check licence</span></div>
+        <details><summary>Query</summary><pre><code><span class="k">CALL</span> gds.graph.project('ppi','Target',
+  {INTERACTS_WITH:{orientation:'UNDIRECTED', properties:'score'}});
+<span class="k">CALL</span> gds.louvain.stream('ppi', {relationshipWeightProperty:'score'})
+<span class="k">YIELD</span> nodeId, communityId <span class="k">RETURN</span> communityId, count(*) <span class="k">ORDER BY</span> count(*) DESC</code></pre></details>
+      </div>
+
+      <div class="card">
+        <h4>Network propagation</h4>
+        <div class="path"><span class="n">disease seeds</span><span class="arrow">→</span><span class="e">INTERACTS_WITH</span><span class="n">network-implicated targets</span></div>
+        <p>Seed with genetic hits and propagate across the PPI network (personalised PageRank) to recover targets implicated by proximity but missed by GWAS — guilt-by-association.</p>
+        <div class="pills"><span class="pill lic">GDS — check licence</span></div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ============ BIOLOGICS ============ -->
+  <div class="theme-block" data-theme="biologics">
+    <div class="theme-head"><span class="theme-tag" style="background:var(--func)">08 · Biologics &amp; antibody target selection</span></div>
+    <div class="grid">
+
+      <div class="card">
+        <h4>Surface / secreted target selection</h4>
+        <div class="path"><span class="n">Target</span><span class="arrow">→</span><span class="e">EXPRESSED_IN + localisation</span></div>
+        <p>Restrict genetically-validated targets to cell-surface or secreted proteins — the antibody-amenable subset. Localisation has to come from a node property or an external annotation join.</p>
+        <div class="pills"><span class="pill dep">needs: subcellular localisation</span></div>
+      </div>
+
+      <div class="card">
+        <h4>Tumour-vs-normal window</h4>
+        <div class="path"><span class="n">Target</span><span class="arrow">→</span><span class="e">EXPRESSED_IN</span><span class="n">Tissue</span> (disease vs normal)</div>
+        <p>Quantify the expression differential between diseased and normal tissue — the therapeutic window that gates an ADC or bispecific programme.</p>
+        <div class="pills"><span class="pill dep">needs: expression level field</span></div>
+      </div>
+
+      <div class="card">
+        <h4>Bispecific / BiTE pair nomination</h4>
+        <div class="path"><span class="n">Target A</span><span class="arrow">↔</span><span class="e">INTERACTS_WITH / co-expression</span><span class="n">Target B</span></div>
+        <p>Nominate surface-target pairs that co-express on the same cells or physically associate — candidate arms for a bispecific or BiTE, tying into your existing docking pipeline.</p>
+        <div class="pills"><span class="pill dep">needs: surface + co-expression</span></div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ============ ML ============ -->
+  <div class="theme-block" data-theme="ml">
+    <div class="theme-head"><span class="theme-tag" style="background:var(--func)">09 · Graph ML &amp; data products</span></div>
+    <div class="grid">
+
+      <div class="card">
+        <h4>KG embeddings &amp; link prediction</h4>
+        <div class="path">whole graph <span class="arrow">→</span><span class="e">TransE / ComplEx / RGCN</span><span class="arrow">→</span> novel edges</div>
+        <p>Train knowledge-graph embeddings to predict missing target–disease or drug–target links — a novelty engine ranking hypotheses the explicit evidence hasn't drawn yet.</p>
+        <div class="pills"><span class="pill lic">PyKEEN / GDS — check licence</span></div>
+      </div>
+
+      <div class="card">
+        <h4>GNN association prediction</h4>
+        <div class="path">subgraph <span class="arrow">→</span><span class="e">GraphSAGE / R-GCN</span><span class="arrow">→</span> scored pairs</div>
+        <p>A supervised GNN over target–disease neighbourhoods, trained on known associations, to score and rank candidates with calibrated confidence.</p>
+        <div class="pills"><span class="pill lic">check model licences</span></div>
+      </div>
+
+      <div class="card">
+        <h4>Auto target / disease dossier</h4>
+        <div class="path"><span class="n">Target</span> or <span class="n">Disease</span> <span class="arrow">→</span> all connected evidence <span class="arrow">→</span> report</div>
+        <p>One parameterised traversal that assembles every evidence type into a formatted one-pager — the report layer over all of the above, ready for a Streamlit or REST front end.</p>
+        <div class="pills"><span class="pill core">pure Cypher + template</span></div>
+      </div>
+
+      <div class="card">
+        <h4>Semantic search portal</h4>
+        <div class="path">query <span class="arrow">→</span><span class="e">resolve → expand → bridge → retrieve</span><span class="arrow">→</span> graph</div>
+        <p>The natural-language front door: your ontology-layer search algorithm resolving terms to nodes, then handing off to any traversal here. The interface that makes the whole graph usable by non-Cypher users.</p>
+        <div class="pills"><span class="pill core">your existing layer</span></div>
+      </div>
+
+    </div>
+  </div>
+
+</section>
+
+<footer>
+  <div class="wrap" style="max-width:none; padding:0">
+  <h2>Notes &amp; caveats</h2>
+  <p><span class="hl">Schema is inferred.</span> Node labels, directions and property names above are read from the relationship names — verify each against <code>db.schema.visualization()</code> and <code>db.schema.relTypeProperties()</code> before building. Pills marked <span style="color:var(--warn)">needs:</span> flag an application that depends on a node/edge property (expression level, subcellular localisation, effect direction, MP↔HPO mapping) that may not be loaded.</p>
+  <p><span class="hl">Licensing.</span> Most core Neo4j GDS algorithms (Louvain, PageRank, FastRP) ship in the free GDS library, but some algorithms, Bloom, and Neo4j Enterprise features are commercially licensed; PyKEEN is MIT but individual pretrained models and some GNN stacks are not. Confirm the licence of any network-analytics or embedding component before it goes into a product.</p>
+  <p><span class="hl">Filtering trade-off.</span> Everything here runs on the post-QC graph, where genetic edges were thresholded for confidence. Applications that need recall at the margins — fine-mapping tails, allelic series, novel-signal discovery — should run against a fuller build, not this working instance.</p>
+  </div>
+</footer>
+</div>
+
+<script>
+(function(){
+  "use strict";
+  var data=[
+    ["IN_CREDIBLE_SET",40771978,"gen"],["ASSOCIATED_WITH",17246560,"gen"],
+    ["MOST_SEVERE_CONSEQUENCE",7432548,"gen"],["EXPRESSED_IN",5614446,"func"],
+    ["FROM_STUDY",3491182,"gen"],["HAS_LEAD_VARIANT",3491182,"gen"],
+    ["L2G",2794835,"gen"],["MEASURES",1865582,"gen"],
+    ["INTERACTS_WITH",1222953,"func"],["TESTED_IN",347197,"drug"],
+    ["INVESTIGATES",325609,"drug"],["ANNOTATED_WITH",290549,"func"],
+    ["HAS_MODEL_PHENOTYPE",210091,"onto"],["HAS_PHENOTYPE",180981,"onto"],
+    ["SUBCLASS_OF",171460,"onto"],["STUDIES",145883,"gen"],
+    ["HAS_ADVERSE_EVENT",115215,"drug"],["IS_A",58799,"onto"],
+    ["INDICATED_FOR",53950,"drug"],["PARTICIPATES_IN",48613,"func"],
+    ["TARGETS",14559,"drug"],["CLINICALLY_TARGETS",13407,"drug"],
+    ["HAS_PGX",3957,"drug"],["HAS_PARENT",1965,"onto"],["HAS_WARNING",849,"drug"]
+  ];
+  var colors={gen:"var(--gen)",func:"var(--func)",drug:"var(--drug)",onto:"var(--onto)"};
+  var max=Math.max.apply(null,data.map(function(d){return d[1]}));
+  var sqmax=Math.sqrt(max);
+  var fmt=function(n){
+    if(n>=1e6)return (n/1e6).toFixed(n>=1e7?0:1)+"M";
+    if(n>=1e3)return (n/1e3).toFixed(0)+"k";
+    return String(n);
+  };
+  var bars=document.getElementById("bars");
+  if(bars){
+    data.forEach(function(d){
+      var row=document.createElement("div"); row.className="bar-row";
+      var lab=document.createElement("div"); lab.className="bar-lab"; lab.textContent=d[0];
+      var track=document.createElement("div"); track.className="bar-track";
+      var fill=document.createElement("div"); fill.className="bar-fill";
+      fill.style.width=(Math.sqrt(d[1])/sqmax*100).toFixed(1)+"%";
+      fill.style.background=colors[d[2]];
+      track.appendChild(fill);
+      var val=document.createElement("div"); val.className="bar-val"; val.textContent=fmt(d[1]);
+      row.appendChild(lab); row.appendChild(track); row.appendChild(val);
+      bars.appendChild(row);
+    });
+  }
+
+  // theme filter
+  var filters=document.querySelectorAll(".filter[data-f]");
+  var blocks=document.querySelectorAll(".theme-block");
+  filters.forEach(function(btn){
+    btn.addEventListener("click",function(){
+      var f=btn.getAttribute("data-f");
+      filters.forEach(function(b){b.setAttribute("aria-pressed", b===btn?"true":"false")});
+      blocks.forEach(function(bl){
+        bl.hidden = !(f==="all" || bl.getAttribute("data-theme")===f);
+      });
+    });
+  });
+
+  // expand/collapse all queries
+  var qt=document.getElementById("qtoggle");
+  if(qt){
+    qt.addEventListener("click",function(){
+      var open = qt.getAttribute("aria-pressed")!=="true";
+      qt.setAttribute("aria-pressed", open?"true":"false");
+      qt.textContent = open?"Hide all queries":"Show all queries";
+      document.querySelectorAll("#apps details").forEach(function(d){d.open=open});
+    });
+  }
+})();
+</script>
